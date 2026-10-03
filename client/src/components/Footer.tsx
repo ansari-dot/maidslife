@@ -251,12 +251,20 @@ export const Footer: React.FC<FooterProps> = ({ onBookClick, onNavigate }) => {
       {/* ── BOTTOM LEGAL & COPYRIGHT BAR ── */}
       <div className="border-t border-white/10 bg-[#051726] py-6 px-6 sm:px-12">
         <div className="mx-auto max-w-[1280px] flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <p
-            className="text-[#94A3B8]"
-            style={{ fontFamily: M, fontSize: '12px', fontWeight: 400 }}
-          >
-            © {new Date().getFullYear()} Maidslife Cleaning Services LLC. All rights reserved.
-          </p>
+          <div className="flex flex-col gap-1">
+            <p
+              className="text-[#94A3B8]"
+              style={{ fontFamily: M, fontSize: '12px', fontWeight: 400 }}
+            >
+              © {new Date().getFullYear()} GOODHANDS CLEANING SERVICES CO. All rights reserved.
+            </p>
+            <p
+              className="text-[#94A3B8]/60"
+              style={{ fontFamily: M, fontSize: '11px', fontWeight: 400 }}
+            >
+              Professional License No: 1400048
+            </p>
+          </div>
 
           <div className="flex items-center gap-6">
             <a href="#" className="text-[#94A3B8] hover:text-white transition-colors" style={{ fontFamily: M, fontSize: '12px' }}>
