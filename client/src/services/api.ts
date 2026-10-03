@@ -1,6 +1,6 @@
 import { ServiceItem, ServiceCategory, ServiceVariant, ServiceAddon } from '../data/servicesData';
 
-const API_BASE = '/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 // Production Secure Fetch Helper (uses HttpOnly Cookies set by backend)
 const fetchApi = async (url: string, options: RequestInit = {}): Promise<Response> => {
@@ -55,7 +55,8 @@ export const clientApi = {
   // 1. Fetch All Services (Dynamic with fallback)
   async getServices(params?: { category?: string; search?: string }): Promise<ServiceItem[]> {
     try {
-      const url = new URL(`${window.location.origin}${API_BASE}/services`);
+      const baseUrl = API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`;
+      const url = new URL(`${baseUrl}/services`);
       if (params?.category) url.searchParams.append('category', params.category);
       if (params?.search) url.searchParams.append('search', params.search);
 
