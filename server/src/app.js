@@ -49,7 +49,15 @@ app.use(
 
 app.use(
   cors({
-    origin: [env.CLIENT_URL, 'http://localhost:3000', 'http://localhost:3001'],
+    origin: [
+      env.CLIENT_URL,
+      env.ADMIN_URL,
+      'http://localhost:3000', 
+      'http://localhost:3001',
+      'https://maidslife.com',
+      'https://www.maidslife.com',
+      'https://admin.maidslife.com'
+    ].filter(Boolean),
     credentials: true,
   })
 );
