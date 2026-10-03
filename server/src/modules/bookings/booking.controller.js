@@ -41,3 +41,8 @@ export const handleZiinaWebhook = asyncHandler(async (req, res) => {
   await BookingService.processZiinaWebhook(req.body);
   return res.status(200).send('OK');
 });
+
+export const deleteBooking = asyncHandler(async (req, res) => {
+  await BookingService.deleteBooking(req.params.id);
+  return res.status(200).json(new ApiResponse(200, {}, 'Booking deleted successfully'));
+});

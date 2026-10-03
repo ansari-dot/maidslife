@@ -237,4 +237,27 @@ export class BookingService {
 
     return booking;
   }
+
+  static async deleteBooking(id) {
+    const booking = await Booking.findByIdAndDelete(id);
+    if (!booking) {
+      throw new ApiError(404, 'Booking not found');
+    }
+
+    // Decrement customer totalBookings
+    if (booking.customer) {
+      await Customer.findByIdAndUpdate(booking.customer, {
+        $inc: { totalBookings: -1 },
+      });
+    }
+
+    // Decrement cleaner activeBookingsCount if assigned and not completed/cancelled
+    if (booking.cleaner && !['completed', 'cancelled'].includes(booking.status)) {
+      await Cleaner.findByIdAndUpdate(booking.cleaner, {
+        $inc: { activeBookingsCount: -1 },
+      });
+    }
+
+    return true;
+  }
 }

@@ -38,6 +38,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Nginx) to fetch real IP
 app.use(morgan('dev'));
 
 // 1. Global Security & Parsing Middleware

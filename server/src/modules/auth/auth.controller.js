@@ -14,7 +14,7 @@ export const signup = asyncHandler(async (req, res) => {
   const { user, accessToken, refreshToken } = await AuthService.signup(req.body);
   return res
     .status(201)
-    .cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 })
+    .cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 })
     .cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000, path: '/api/v1/auth/refresh' })
     .json(new ApiResponse(201, { user }, 'User registered successfully.'));
 });
@@ -31,7 +31,7 @@ export const login = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 })
+    .cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 })
     .cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000, path: '/api/v1/auth/refresh' })
     .json(new ApiResponse(200, { user }, 'Login successful'));
 });
@@ -42,7 +42,7 @@ export const refresh = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 })
+    .cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 })
     .cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000, path: '/api/v1/auth/refresh' })
     .json(new ApiResponse(200, { user }, 'Token refreshed successfully'));
 });

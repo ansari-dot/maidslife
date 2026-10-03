@@ -6,6 +6,7 @@ import {
   updateBookingStatus,
   assignCleaner,
   handleZiinaWebhook,
+  deleteBooking,
 } from './booking.controller.js';
 import {
   createBookingSchema,
@@ -27,7 +28,8 @@ router.post('/webhook/ziina', handleZiinaWebhook);
 
 router
   .route('/:id')
-  .get(verifyJWT, authorizeRoles('super_admin', 'ops_manager', 'dispatcher', 'support'), getBookingById);
+  .get(verifyJWT, authorizeRoles('super_admin', 'ops_manager', 'dispatcher', 'support'), getBookingById)
+  .delete(verifyJWT, authorizeRoles('super_admin', 'ops_manager'), deleteBooking);
 
 router
   .route('/:id/status')

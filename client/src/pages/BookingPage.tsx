@@ -780,6 +780,33 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     </div>
                   </div>
 
+                  {/* PAYMENT METHOD */}
+                  <div className="space-y-3 pt-4">
+                    <h3 className="text-[#0C3352] text-base font-extrabold border-b border-slate-100 pb-2 flex items-center justify-between" style={{ fontFamily: M }}>
+                      <span>3. Payment Method</span>
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('ziina')}
+                        className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer font-bold text-sm ${paymentMethod === 'ziina' ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF]' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
+                        style={{ fontFamily: M }}
+                      >
+                        <CreditCard size={24} weight={paymentMethod === 'ziina' ? 'fill' : 'regular'} />
+                        Pay by Card
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('cash')}
+                        className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer font-bold text-sm ${paymentMethod === 'cash' ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF]' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
+                        style={{ fontFamily: M }}
+                      >
+                        <House size={24} weight={paymentMethod === 'cash' ? 'fill' : 'regular'} />
+                        Cash on Delivery
+                      </button>
+                    </div>
+                  </div>
+
                   {/* SUBMIT BUTTON */}
                   <button
                     type="submit"
