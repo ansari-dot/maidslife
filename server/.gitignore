@@ -1,0 +1,4 @@
+node_modules/
+.env
+# Applicant CVs (personal data) - never commit
+private/

@@ -1,0 +1,6 @@
+{
+  "name": "Maidslife Home-Services Admin Management Panel",
+  "description": "Centralized management platform for home-services operations, booking dispatch, cleaner assignments, catalog hierarchy, promo codes, and UAE analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
