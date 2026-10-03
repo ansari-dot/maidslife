@@ -120,11 +120,11 @@ export const Footer: React.FC<FooterProps> = ({ onBookClick, onNavigate }) => {
             <div className="mt-6 flex flex-col gap-3">
               <div className="flex items-center gap-3 text-[#CBD5E1]">
                 <Phone size={18} className="text-[#0084FF] shrink-0" />
-                <span style={{ fontFamily: M, fontSize: '13px', fontWeight: 600 }}>+971 4 123 4567</span>
+                <span style={{ fontFamily: M, fontSize: '13px', fontWeight: 600 }}>056 213 3996</span>
               </div>
               <div className="flex items-center gap-3 text-[#CBD5E1]">
                 <EnvelopeSimple size={18} className="text-[#0084FF] shrink-0" />
-                <span style={{ fontFamily: M, fontSize: '13px' }}>support@maidslife.ae</span>
+                <span style={{ fontFamily: M, fontSize: '13px' }}>info@maidslife.com</span>
               </div>
               <div className="flex items-center gap-3 text-[#CBD5E1]">
                 <MapPin size={18} className="text-[#0084FF] shrink-0" />

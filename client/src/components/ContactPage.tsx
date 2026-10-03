@@ -251,14 +251,14 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBookClick }) => {
                       Call Us Directly
                     </h4>
                     <p style={{ fontFamily: M, fontSize: '13px', color: '#5A6E7F' }} className="mt-0.5">
-                      +971 4 123 4567 &bull; +971 50 987 6543
+                      056 213 3996
                     </p>
                   </div>
                 </div>
 
                 {/* WhatsApp Card */}
                 <a
-                  href="https://wa.me/971509876543?text=Hello%20Maidslife!%20I%20would%20like%20to%20book%20a%20cleaning%20service."
+                  href="https://wa.me/971562133996?text=Hello%20Maidslife!%20I%20would%20like%20to%20book%20a%20cleaning%20service."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-start gap-4 p-4 rounded-2xl bg-[#F8FAFC] border border-slate-100 hover:border-[#25D366] hover:bg-emerald-50/40 transition-all group cursor-pointer"
@@ -288,7 +288,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBookClick }) => {
                       Email Support
                     </h4>
                     <p style={{ fontFamily: M, fontSize: '13px', color: '#5A6E7F' }} className="mt-0.5">
-                      support@maidslife.ae &bull; info@maidslife.ae
+                      info@maidslife.com
                     </p>
                   </div>
                 </div>

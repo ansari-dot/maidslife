@@ -19,7 +19,7 @@ const OfficialWhatsAppIcon: React.FC<{ size?: number; className?: string }> = ({
 export const WhatsAppButton: React.FC = () => {
   const [showTooltip, setShowTooltip] = useState(true);
 
-  const whatsappNumber = '971509876543'; // Dubai WhatsApp number
+  const whatsappNumber = '971562133996'; // Dubai WhatsApp number
   const defaultMessage = encodeURIComponent(
     'Hello Maidslife! I would like to inquire about booking a cleaning service.'
   );

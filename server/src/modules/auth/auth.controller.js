@@ -6,8 +6,8 @@ import { env } from '../../config/env.js';
 const cookieOptions = {
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: 'strict',
-  domain: env.NODE_ENV === 'production' ? env.COOKIE_DOMAIN : undefined,
+  sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+  domain: env.NODE_ENV === 'production' ? '.maidslife.com' : undefined,
 };
 
 export const signup = asyncHandler(async (req, res) => {
