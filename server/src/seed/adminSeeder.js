@@ -14,24 +14,24 @@ async function seedAdmin() {
     });
     console.log('🔗 Connected to MongoDB');
 
-    // Check if a super admin already exists
-    const existingAdmin = await User.findOne({ role: 'super_admin' });
-    if (existingAdmin) {
-      console.log('✅ Super admin already exists.');
-      return;
-    }
-
     const hashedPassword = await bcrypt.hash('Arsu123@', 12);
-    const adminUser = new User({
-      name: 'Super Admin',
-      email: '0349ansari@gmail.com',
-      passwordHash: hashedPassword,
-      role: 'super_admin',
-      isActive: true,
-    });
+    
+    // Upsert the user to ensure the role is set correctly even if they already exist
+    const adminUser = await User.findOneAndUpdate(
+      { email: 'admin@gmail.com' },
+      {
+        $set: {
+          name: 'System Admin',
+          passwordHash: hashedPassword,
+          role: 'admin',
+          isActive: true,
+          isEmailVerified: true,
+        }
+      },
+      { upsert: true, new: true }
+    );
 
-    await adminUser.save();
-    console.log('🛠️ Super admin created successfully.');
+    console.log('🛠️ Admin user verified and updated successfully.');
   } catch (err) {
     console.error('❌ Error seeding admin user:', err);
   } finally {
