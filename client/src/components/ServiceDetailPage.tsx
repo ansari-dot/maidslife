@@ -19,7 +19,7 @@ import {
   Package,
   ArrowsLeftRight,
 } from '@phosphor-icons/react';
-import { ServiceItem, ServiceVariant, ServiceCategory } from '../data/servicesData';
+import { ServiceItem, ServiceCategory } from '../data/servicesData';
 import { clientApi } from '../services/api';
 
 const M = "'Manrope', sans-serif";
@@ -28,7 +28,7 @@ interface ServiceDetailPageProps {
   serviceId?: string;
   serviceName?: string;
   onBackToHome?: () => void;
-  onBookClick?: (serviceId?: string, variantId?: string, addonIds?: string[]) => void;
+  onBookClick?: (serviceId?: string, addonIds?: string[]) => void;
 }
 
 // BEFORE & AFTER GALLERY SCENES
@@ -144,8 +144,7 @@ export const ServiceDetailPage: React.FC<ServiceDetailPageProps> = ({
 }) => {
   const [service, setService] = useState<ServiceItem | null>(null);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
-  const [selectedVariantIds, setSelectedVariantIds] = useState<string[]>([]);
-  const [activeSceneIdx, setActiveSceneIdx] = useState(0);
+    const [activeSceneIdx, setActiveSceneIdx] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -159,9 +158,7 @@ export const ServiceDetailPage: React.FC<ServiceDetailPageProps> = ({
       if (isMounted) {
         if (data) {
           setService(data);
-          if (data.variants && data.variants.length > 0) {
-            setSelectedVariantIds([data.variants[0].id]);
-          }
+          
         }
         if (cats && cats.length > 0) {
           setCategories(cats);
@@ -180,12 +177,10 @@ export const ServiceDetailPage: React.FC<ServiceDetailPageProps> = ({
   const category = categories.find((c) => c.id === service?.categoryId);
   const activeScene = GALLERY_SCENES[activeSceneIdx];
 
-  const handleVariantBookNow = (variantId: string) => {
-    if (service) onBookClick?.(service.id, variantId, []);
-  };
+
 
   const handleMainBookNow = () => {
-    if (service && selectedVariantIds.length > 0) onBookClick?.(service.id, selectedVariantIds[0], []);
+    if (service) onBookClick?.(service.id, []);
   };
 
   if (isLoading) {
@@ -305,128 +300,7 @@ export const ServiceDetailPage: React.FC<ServiceDetailPageProps> = ({
       </section>
 
 
-      {/* ── 2. DEDICATED VARIANTS / PRICING OPTIONS SECTION ── */}
-      <section id="variants-section" className="w-full bg-white py-20 px-6 sm:px-12 border-t border-slate-100">
-        <div className="mx-auto max-w-[1280px]">
 
-          <div className="text-center max-w-[700px] mx-auto mb-12">
-            <span
-              className="text-[#0084FF] uppercase tracking-[0.15em] font-extrabold"
-              style={{ fontFamily: M, fontSize: '11px', lineHeight: '18px' }}
-            >
-              CHOOSE YOUR PACKAGE VARIANT
-            </span>
-            <h2
-              className="mt-2 text-[#0C3352]"
-              style={{ fontFamily: M, fontWeight: 800, }}
-            >
-              Available Options &amp; Pricing Packages
-            </h2>
-            <p
-              className="mt-3 text-[#5A6E7F]"
-              style={{ fontFamily: M, fontSize: '15px', fontWeight: 400 }}
-            >
-              Select the exact size or scope for your space. Each package includes dedicated cleaners, equipment, and full sanitization.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {service.variants.length === 0 && (
-              <div className="col-span-full text-center py-10 border border-dashed rounded-xl border-slate-300">
-                <p className="text-slate-500">No packages available for this service yet.</p>
-              </div>
-            )}
-            {service.variants.map((variant) => {
-              const isSelected = selectedVariantIds.includes(variant.id);
-              return (
-                <div
-                  key={variant.id}
-                  className={`relative rounded-[24px] border p-6 flex flex-col justify-between transition-all duration-300 ${
-                    isSelected
-                      ? 'border-[#0084FF] bg-[#E8F3FF]/40 shadow-xl ring-2 ring-[#0084FF]/20 scale-[1.02]'
-                      : 'border-slate-200 bg-white hover:border-[#0084FF]/50 hover:shadow-lg'
-                  }`}
-                >
-                  {isSelected && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0084FF] text-white px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
-                      SELECTED OPTION
-                    </div>
-                  )}
-
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span
-                        className="inline-flex items-center gap-1 bg-[#E8F3FF] text-[#0066CC] px-2.5 py-1 rounded-lg text-[11px] font-extrabold"
-                        style={{ fontFamily: M }}
-                      >
-                        <Clock size={13} weight="bold" />
-                        {variant.duration}
-                      </span>
-                    </div>
-
-                    <h3
-                      className="text-[#0C3352] text-xl font-extrabold"
-                      style={{ fontFamily: M }}
-                    >
-                      {variant.name}
-                    </h3>
-
-                    <p
-                      className="text-xs text-[#5A6E7F] mt-2 leading-relaxed min-h-[40px]"
-                      style={{ fontFamily: M }}
-                    >
-                      {variant.description}
-                    </p>
-
-                    <div className="mt-6 pt-4 border-t border-slate-100 flex items-baseline gap-2">
-                      <span
-                        className="text-3xl font-extrabold text-[#0C3352]"
-                        style={{ fontFamily: M }}
-                      >
-                        AED {variant.price}
-                      </span>
-                      <span className="text-xs text-slate-400 line-through" style={{ fontFamily: M }}>
-                        AED {variant.originalPrice}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 space-y-2">
-                    <button
-                      onClick={() => handleVariantBookNow(variant.id)}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-grad-primary-cta py-3 text-[#0C3352] font-extrabold text-xs shadow-md hover:brightness-105 transition-all cursor-pointer"
-                      style={{ fontFamily: M }}
-                    >
-                      <CalendarBlank size={16} weight="bold" />
-                      Book Now (AED {variant.price})
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        if (selectedVariantIds.includes(variant.id)) {
-                          setSelectedVariantIds(selectedVariantIds.filter(id => id !== variant.id));
-                        } else {
-                          setSelectedVariantIds([...selectedVariantIds, variant.id]);
-                        }
-                      }}
-                      className={`w-full py-2 rounded-full text-xs font-bold transition-colors cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#0084FF] text-white'
-                          : 'bg-slate-100 text-[#5A6E7F] hover:bg-slate-200'
-                      }`}
-                      style={{ fontFamily: M }}
-                    >
-                      {isSelected ? '✓ Selected for Package' : 'Select Option'}
-                    </button>
-                  </div>
-
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
-      </section>
 
 
       {/* ── 3. WHAT IS INCLUDED & FEATURES ── */}

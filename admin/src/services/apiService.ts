@@ -1,7 +1,6 @@
 import {
   ServiceCategory,
   ServiceItem,
-  ServiceVariant,
   ServiceAddon,
   BookingDetails,
   BookingStatus,
@@ -48,7 +47,13 @@ function normalizeItem<T extends any>(item: T): T {
 
   if ((item as any).category !== undefined) normalized.categoryId = typeof (item as any).category === 'object' ? (item as any).category._id : (item as any).category;
   if ((item as any).service !== undefined) normalized.serviceId = typeof (item as any).service === 'object' ? (item as any).service._id : (item as any).service;
-  if ((item as any).icon !== undefined) normalized.iconName = (item as any).icon;
+  if ((item as any).icon !== undefined) {
+    normalized.icon = (item as any).icon;
+    normalized.iconName = (item as any).icon;
+  }
+  if ((item as any).image !== undefined) {
+    normalized.image = (item as any).image;
+  }
   if ((item as any).isActive !== undefined && typeof (item as any).status === 'undefined') normalized.status = (item as any).isActive ? 'active' : 'draft';
   if ((item as any).name !== undefined && (item as any).fullName === undefined) normalized.fullName = (item as any).name;
   if ((item as any).avatarUrl !== undefined && (item as any).avatar === undefined) normalized.avatar = (item as any).avatarUrl;
@@ -153,7 +158,11 @@ export const apiService = {
     return normalizeList(data);
   },
   async createCategory(cat: Omit<ServiceCategory, 'id'>): Promise<ServiceCategory> {
-    const payload = { ...cat, icon: cat.iconName };
+    const payload = {
+      ...cat,
+      icon: cat.iconName || cat.icon || '',
+      image: cat.image || '',
+    };
     const data = await request<ServiceCategory>('/categories', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -161,7 +170,12 @@ export const apiService = {
     return normalizeItem(data);
   },
   async updateCategory(id: string, updates: Partial<ServiceCategory>): Promise<ServiceCategory> {
-    const payload = { ...updates, ...(updates.iconName && { icon: updates.iconName }) };
+    const payload = {
+      ...updates,
+      ...(updates.iconName !== undefined && { icon: updates.iconName }),
+      ...(updates.icon !== undefined && { icon: updates.icon }),
+      ...(updates.image !== undefined && { image: updates.image }),
+    };
     const data = await request<ServiceCategory>(`/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
@@ -197,30 +211,7 @@ export const apiService = {
     await request(`/services/${id}`, { method: 'DELETE' });
   },
 
-  // --- VARIANTS ---
-  async getVariants(): Promise<ServiceVariant[]> {
-    const data = await request<ServiceVariant[]>('/variants');
-    return normalizeList(data);
-  },
-  async createVariant(v: Omit<ServiceVariant, 'id'>): Promise<ServiceVariant> {
-    const payload = { ...v, service: v.serviceId };
-    const data = await request<ServiceVariant>('/variants', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-    return normalizeItem(data);
-  },
-  async updateVariant(id: string, updates: Partial<ServiceVariant>): Promise<ServiceVariant> {
-    const payload = { ...updates, ...(updates.serviceId && { service: updates.serviceId }) };
-    const data = await request<ServiceVariant>(`/variants/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    });
-    return normalizeItem(data);
-  },
-  async deleteVariant(id: string): Promise<void> {
-    await request(`/variants/${id}`, { method: 'DELETE' });
-  },
+
 
   // --- ADDONS ---
   async getAddons(): Promise<ServiceAddon[]> {
@@ -228,7 +219,12 @@ export const apiService = {
     return normalizeList(data);
   },
   async createAddon(adn: Omit<ServiceAddon, 'id'>): Promise<ServiceAddon> {
-    const payload = { ...adn, service: adn.serviceId };
+    const payload = {
+      ...adn,
+      service: adn.serviceId,
+      icon: adn.iconName || adn.icon || '',
+      image: adn.image || '',
+    };
     const data = await request<ServiceAddon>('/addons', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -236,7 +232,13 @@ export const apiService = {
     return normalizeItem(data);
   },
   async updateAddon(id: string, updates: Partial<ServiceAddon>): Promise<ServiceAddon> {
-    const payload = { ...updates, ...(updates.serviceId && { service: updates.serviceId }) };
+    const payload = {
+      ...updates,
+      ...(updates.serviceId && { service: updates.serviceId }),
+      ...(updates.iconName !== undefined && { icon: updates.iconName }),
+      ...(updates.icon !== undefined && { icon: updates.icon }),
+      ...(updates.image !== undefined && { image: updates.image }),
+    };
     const data = await request<ServiceAddon>(`/addons/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),

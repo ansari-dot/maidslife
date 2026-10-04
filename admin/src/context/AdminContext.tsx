@@ -3,7 +3,6 @@ import { apiClient } from '../api/client';
 import {
   ServiceCategory,
   ServiceItem,
-  ServiceVariant,
   ServiceAddon,
   BookingDetails,
   BookingStatus,
@@ -61,11 +60,7 @@ interface AdminContextType {
   updateService: (id: string, updates: Partial<ServiceItem>) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
 
-  variants: ServiceVariant[];
-  addVariant: (v: Omit<ServiceVariant, 'id'>) => Promise<void>;
-  updateVariant: (id: string, updates: Partial<ServiceVariant>) => Promise<void>;
-  deleteVariant: (id: string) => Promise<void>;
-
+        
   addons: ServiceAddon[];
   addAddon: (adn: Omit<ServiceAddon, 'id'>) => Promise<void>;
   updateAddon: (id: string, updates: Partial<ServiceAddon>) => Promise<void>;
@@ -181,53 +176,20 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [services, setServices] = useState<ServiceItem[]>(() =>
     loadStorage('services', [])
   );
-  const [variants, setVariants] = useState<ServiceVariant[]>(() =>
-    loadStorage('variants', [])
-  );
-  const [addons, setAddons] = useState<ServiceAddon[]>(() =>
-    loadStorage('addons', [])
-  );
-  const [bookings, setBookings] = useState<BookingDetails[]>(() =>
-    loadStorage('bookings', [])
-  );
-  const [cleaners, setCleaners] = useState<CleanerProfile[]>(() =>
-    loadStorage('cleaners', [])
-  );
-  const [customers, setCustomers] = useState<CustomerProfile[]>(() =>
-    loadStorage('customers', [])
-  );
-  const [coupons, setCoupons] = useState<Coupon[]>(() =>
-    loadStorage('coupons', [])
-  );
-  const [gallery, setGallery] = useState<GalleryScene[]>(() =>
-    loadStorage('gallery', [])
-  );
-  const [testimonials, setTestimonials] = useState<Testimonial[]>(() =>
-    loadStorage('testimonials', [])
-  );
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() =>
-    loadStorage('teamMembers', [])
-  );
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() =>
-    loadStorage('auditLogs', [])
-  );
-  const [settings, setSettings] = useState<SystemSettings>(() =>
-    loadStorage('settings', {
-      companyName: 'Maidslife Home Services LLC',
-      supportEmail: 'support@maidslife.ae',
-      supportPhone: '+971 50 123 4567',
-      timezone: 'Asia/Dubai (GMT+04:00)',
-      currency: 'AED - UAE Dirham',
-      autoAssignCleaners: true,
-      customerNotifications: true,
-      smsNotifications: true,
-      maintenanceMode: false,
-      taxRatePercent: 5,
-    })
-  );
 
-  const [notifications, setNotifications] = useState<{ id: string; title: string; time: string; read: boolean; type: string }[]>([]);
-  const [toast, setToast] = useState<ToastNotification | null>(null);
+  const [addons, setAddons] = useState<ServiceAddon[]>(() => loadStorage('addons', []));
+  const [bookings, setBookings] = useState<BookingDetails[]>(() => loadStorage('bookings', []));
+  const [cleaners, setCleaners] = useState<CleanerProfile[]>(() => loadStorage('cleaners', []));
+  const [customers, setCustomers] = useState<CustomerProfile[]>(() => loadStorage('customers', []));
+  const [coupons, setCoupons] = useState<Coupon[]>(() => loadStorage('coupons', []));
+  const [gallery, setGallery] = useState<GalleryScene[]>(() => loadStorage('gallery', []));
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(() => loadStorage('testimonials', []));
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => loadStorage('teamMembers', []));
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => loadStorage('auditLogs', []));
+  const [settings, setSettings] = useState<SystemSettings>(() => loadStorage('settings', {} as SystemSettings));
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+    const [toast, setToast] = useState<ToastNotification | null>(null);
 
   // Load initial data from backend API
   useEffect(() => {
@@ -238,7 +200,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const [
           catData,
           srvData,
-          varData,
+
           adnData,
           bkData,
           clnData,
@@ -251,7 +213,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ] = await Promise.allSettled([
           apiService.getCategories(),
           apiService.getServices(),
-          apiService.getVariants(),
+          
           apiService.getAddons(),
           apiService.getBookings(),
           apiService.getCleaners(),
@@ -265,8 +227,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         if (catData.status === 'fulfilled' && catData.value.length >= 0) setCategories(catData.value);
         if (srvData.status === 'fulfilled' && srvData.value.length >= 0) setServices(srvData.value);
-        if (varData.status === 'fulfilled' && varData.value.length >= 0) setVariants(varData.value);
-        if (adnData.status === 'fulfilled' && adnData.value.length >= 0) setAddons(adnData.value);
+                if (adnData.status === 'fulfilled' && adnData.value.length >= 0) setAddons(adnData.value);
         if (bkData.status === 'fulfilled' && bkData.value.length >= 0) setBookings(bkData.value);
         if (clnData.status === 'fulfilled' && clnData.value.length >= 0) setCleaners(clnData.value);
         if (cstData.status === 'fulfilled' && cstData.value.length >= 0) setCustomers(cstData.value);
@@ -286,8 +247,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Sync to storage
   useEffect(() => saveStorage('categories', categories), [categories]);
   useEffect(() => saveStorage('services', services), [services]);
-  useEffect(() => saveStorage('variants', variants), [variants]);
-  useEffect(() => saveStorage('addons', addons), [addons]);
+    useEffect(() => saveStorage('addons', addons), [addons]);
   useEffect(() => saveStorage('bookings', bookings), [bookings]);
   useEffect(() => saveStorage('cleaners', cleaners), [cleaners]);
   useEffect(() => saveStorage('customers', customers), [customers]);
@@ -409,7 +369,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // VARIANTS CRUD
-  const addVariant = async (v: Omit<ServiceVariant, 'id'>) => {
+  const addVariant = async (v: Omit<'id'>) => {
     try {
       const created = await apiService.createVariant(v);
       setVariants((prev) => [...prev, created]);
@@ -891,8 +851,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.clear();
     setCategories([]);
     setServices([]);
-    setVariants([]);
-    setAddons([]);
+        setAddons([]);
     setBookings([]);
     setCleaners([]);
     setCustomers([]);
@@ -980,11 +939,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateService,
         deleteService,
 
-        variants,
-        addVariant,
-        updateVariant,
-        deleteVariant,
-
+                                
         addons,
         addAddon,
         updateAddon,
@@ -1018,7 +973,8 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addTransformation: addGalleryScene,
         updateGalleryScene,
         updateTransformation: updateGalleryScene,
-    deleteTransformation: deleteGalleryScene,
+        deleteGalleryScene,
+        deleteTransformation: deleteGalleryScene,
 
     testimonials,
     addTestimonial,

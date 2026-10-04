@@ -9,6 +9,25 @@ const imageSizeSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const variantSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  price: {
+    type: Number,
+    default: 0,
+  },
+  image: {
+    type: String,
+    default: '',
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  }
+});
+
 const serviceSchema = new mongoose.Schema(
   {
     category: {
@@ -42,6 +61,10 @@ const serviceSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'Starting price is required'],
     },
+    extraProfessionalPrice: {
+      type: Number,
+      default: 0,
+    },
     images: [
       {
         url: String,
@@ -69,6 +92,7 @@ const serviceSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    variants: [variantSchema],
   },
   {
     timestamps: true,

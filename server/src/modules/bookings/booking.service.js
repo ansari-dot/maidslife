@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Booking } from './booking.model.js';
 import { Customer } from '../customers/customer.model.js';
 import { Cleaner } from '../cleaners/cleaner.model.js';
@@ -9,81 +10,95 @@ import { Coupon } from '../coupons/coupon.model.js';
 
 export class BookingService {
   static async createBooking(data) {
-    const bookingRef = `ML-${Math.floor(1000 + Math.random() * 9000)}`;
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Handle customer auto-creation/lookup
-    let customerId = data.customer;
-    let customerObj = null;
-    
-    if (customerId) {
-      customerObj = await Customer.findById(customerId);
-    }
-    
-    if (!customerId && data.customerPhone) {
-      customerObj = await Customer.findOne({ phone: data.customerPhone });
-      if (!customerObj) {
-        customerObj = await Customer.create({
-          name: data.customerName || 'Guest Customer',
-          phone: data.customerPhone,
-          email: data.customerEmail || undefined,
-        });
-      }
-      customerId = customerObj._id;
-    }
+    try {
+      const bookingRef = `ML-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    if (!customerId) {
-      throw new ApiError(400, 'Customer details are required to create a booking');
-    }
-
-    // Handle coupon usage increment
-    if (data.couponCode) {
-      const updateData = { $inc: { usedCount: 1 } };
-      const emailToPush = data.customerEmail || (customerObj && customerObj.email ? customerObj.email : null);
+      // Handle customer auto-creation/lookup
+      let customerId = data.customer;
+      let customerObj = null;
       
-      if (emailToPush) {
-        updateData.$addToSet = { usedByEmails: emailToPush.toLowerCase().trim() };
+      if (customerId) {
+        customerObj = await Customer.findById(customerId).session(session);
+      }
+      
+      if (!customerId && data.customerPhone) {
+        customerObj = await Customer.findOne({ phone: data.customerPhone }).session(session);
+        if (!customerObj) {
+          const createdCustomers = await Customer.create([{
+            name: data.customerName || 'Guest Customer',
+            phone: data.customerPhone,
+            email: data.customerEmail || undefined,
+          }], { session });
+          customerObj = createdCustomers[0];
+        }
+        customerId = customerObj._id;
       }
 
-      const coupon = await Coupon.findOneAndUpdate(
-        { code: data.couponCode.toUpperCase(), isActive: true },
-        updateData,
-        { new: true }
-      );
-      if (!coupon) {
-        throw new ApiError(400, 'Invalid or inactive coupon code');
+      if (!customerId) {
+        throw new ApiError(400, 'Customer details are required to create a booking');
       }
-    }
 
-    const initialTimeline = [
-      {
+      // Handle coupon usage increment
+      if (data.couponCode) {
+        const updateData = { $inc: { usedCount: 1 } };
+        const emailToPush = data.customerEmail || (customerObj && customerObj.email ? customerObj.email : null);
+        
+        if (emailToPush) {
+          updateData.$addToSet = { usedByEmails: emailToPush.toLowerCase().trim() };
+        }
+
+        const coupon = await Coupon.findOneAndUpdate(
+          { code: data.couponCode.toUpperCase(), isActive: true },
+          updateData,
+          { new: true, session }
+        );
+        if (!coupon) {
+          throw new ApiError(400, 'Invalid or inactive coupon code');
+        }
+      }
+
+      const initialTimeline = [
+        {
+          status: data.cleaner ? 'assigned' : 'pending_assignment',
+          timestamp: new Date(),
+          note: 'Booking created',
+        },
+      ];
+
+      const createdBookings = await Booking.create([{
+        ...data,
+        customer: customerId,
+        bookingRef,
         status: data.cleaner ? 'assigned' : 'pending_assignment',
-        timestamp: new Date(),
-        note: 'Booking created',
-      },
-    ];
+        timeline: initialTimeline,
+      }], { session });
+      const booking = createdBookings[0];
 
-    const booking = await Booking.create({
-      ...data,
-      customer: customerId,
-      bookingRef,
-      status: data.cleaner ? 'assigned' : 'pending_assignment',
-      timeline: initialTimeline,
-    });
+      // Update customer totalBookings & lastBookingAt
+      await Customer.findByIdAndUpdate(customerId, {
+        $inc: { totalBookings: 1 },
+        lastBookingAt: new Date(),
+      }, { session });
 
-    // Update customer totalBookings & lastBookingAt
-    await Customer.findByIdAndUpdate(customerId, {
-      $inc: { totalBookings: 1 },
-      lastBookingAt: new Date(),
-    });
+      // If assigned cleaner, update cleaner activeBookingsCount
+      if (data.cleaner) {
+        await Cleaner.findByIdAndUpdate(data.cleaner, {
+          $inc: { activeBookingsCount: 1 },
+        }, { session });
+      }
 
-    // If assigned cleaner, update cleaner activeBookingsCount
-    if (data.cleaner) {
-      await Cleaner.findByIdAndUpdate(data.cleaner, {
-        $inc: { activeBookingsCount: 1 },
-      });
+      await session.commitTransaction();
+      session.endSession();
+
+      return { booking };
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
     }
-
-    return { booking };
   }
 
   static async processZiinaWebhook(payload) {
@@ -136,7 +151,7 @@ export class BookingService {
       Booking.find(filter)
         .populate('customer', 'name phone email')
         .populate('service', 'name tagline startingPrice')
-        .populate('variants', 'name price duration')
+
         .populate('addons', 'name price')
         .populate('cleaner', 'name phone avatarUrl status currentLocation')
         .sort(sort)
@@ -156,7 +171,7 @@ export class BookingService {
     const booking = await Booking.findById(id)
       .populate('customer', 'name phone email totalBookings')
       .populate('service', 'name tagline startingPrice')
-      .populate('variants', 'name price duration')
+
       .populate('addons', 'name price')
       .populate('cleaner', 'name phone avatarUrl status rating completedJobs')
       .lean();

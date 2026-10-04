@@ -21,6 +21,18 @@ const addonSchema = new mongoose.Schema(
       type: String,
       default: '30 mins',
     },
+    description: {
+      type: String,
+      default: '',
+    },
+    icon: {
+      type: String,
+      default: '',
+    },
+    image: {
+      type: String,
+      default: '',
+    },
     isActive: {
       type: Boolean,
       default: true,

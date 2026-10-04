@@ -6,6 +6,9 @@ export const createAddonSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     price: z.number().min(0, 'Price must be positive'),
     duration: z.string().optional(),
+    description: z.string().optional(),
+    icon: z.string().optional(),
+    image: z.string().optional(),
     isActive: z.boolean().optional(),
   }),
 });
@@ -19,6 +22,9 @@ export const updateAddonSchema = z.object({
     name: z.string().optional(),
     price: z.number().optional(),
     duration: z.string().optional(),
+    description: z.string().optional(),
+    icon: z.string().optional(),
+    image: z.string().optional(),
     isActive: z.boolean().optional(),
   }),
 });

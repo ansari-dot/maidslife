@@ -8,10 +8,19 @@ export const createServiceSchema = z.object({
     tagline: z.string().optional(),
     description: z.string().optional(),
     startingPrice: z.number().min(0, 'Price cannot be negative'),
+    extraProfessionalPrice: z.number().min(0, 'Extra professional price cannot be negative').optional(),
     icon: z.string().optional(),
     image: z.string().optional(),
     features: z.array(z.string()).optional(),
     isActive: z.boolean().optional(),
+    variants: z.array(
+      z.object({
+        name: z.string().min(1, 'Variant name is required'),
+        price: z.number().min(0).optional(),
+        image: z.string().optional(),
+        isActive: z.boolean().optional(),
+      })
+    ).optional(),
   }),
 });
 
@@ -26,9 +35,18 @@ export const updateServiceSchema = z.object({
     tagline: z.string().optional(),
     description: z.string().optional(),
     startingPrice: z.number().optional(),
+    extraProfessionalPrice: z.number().optional(),
     icon: z.string().optional(),
     image: z.string().optional(),
     features: z.array(z.string()).optional(),
     isActive: z.boolean().optional(),
+    variants: z.array(
+      z.object({
+        name: z.string().min(1, 'Variant name is required'),
+        price: z.number().min(0).optional(),
+        image: z.string().optional(),
+        isActive: z.boolean().optional(),
+      })
+    ).optional(),
   }),
 });

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Cleaner } from './cleaner.model.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { getPaginationOptions, getPaginationMeta } from '../../utils/pagination.js';
@@ -47,6 +48,57 @@ export class CleanerService {
       cleaners,
       meta: getPaginationMeta(total, page, limit),
     };
+  }
+
+  static async getAvailableCleaners(query) {
+    const { date, lat, lng, radius = 50000, timeSlot } = query;
+    const filter = { status: { $in: ['available', 'on_job'] } }; // they might be on_job but available for another time slot
+
+    if (lat && lng) {
+      filter.location = {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [parseFloat(lng), parseFloat(lat)]
+          },
+          $maxDistance: parseInt(radius)
+        }
+      };
+    }
+
+    let cleaners = await Cleaner.find(filter).lean();
+
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const Booking = mongoose.model('Booking');
+      const bookings = await Booking.find({
+        scheduledAt: { $gte: startOfDay, $lte: endOfDay },
+        status: { $in: ['assigned', 'in_transit', 'in_progress'] },
+        cleaner: { $in: cleaners.map(c => c._id) }
+      }).lean();
+
+      if (timeSlot) {
+        // filter out cleaners that are booked in this time slot
+        // we assume a simple overlap check using timeSlot string or just exact match
+        const bookedCleanerIds = bookings.filter(b => b.timeSlot === timeSlot).map(b => b.cleaner.toString());
+        cleaners = cleaners.filter(c => !bookedCleanerIds.includes(c._id.toString()));
+      } else {
+        // map busy slots to cleaners
+        cleaners = cleaners.map(c => {
+          const cleanerBookings = bookings.filter(b => b.cleaner.toString() === c._id.toString());
+          return {
+            ...c,
+            busySlots: cleanerBookings.map(b => b.timeSlot)
+          };
+        });
+      }
+    }
+
+    return cleaners;
   }
 
   static async getCleanerById(id) {

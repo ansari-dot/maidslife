@@ -1,4 +1,4 @@
-import { ServiceItem, ServiceCategory, ServiceVariant, ServiceAddon } from '../data/servicesData';
+import { ServiceItem, ServiceCategory, ServiceAddon } from '../data/servicesData';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -29,23 +29,26 @@ const mapBackendServiceToClient = (svc: any): ServiceItem => {
     image: svc.images?.[0]?.url || svc.image || '',
     iconName: svc.iconName || 'House',
     features: Array.isArray(svc.features) ? svc.features : [],
+    
     variants: Array.isArray(svc.variants)
       ? svc.variants.map((v: any) => ({
         id: v._id || v.id,
         name: v.name,
         price: v.price,
-        originalPrice: v.originalPrice || Math.round(v.price * 1.3),
-        duration: v.duration || '2 Hours',
-        description: v.description || '',
+        image: v.image || '',
+        isActive: v.isActive !== false,
       }))
       : [],
+
     addons: Array.isArray(svc.addons)
       ? svc.addons.map((a: any) => ({
         id: a._id || a.id,
         name: a.name,
         price: a.price,
         duration: a.duration,
-        icon: a.icon,
+        icon: a.icon || a.iconName,
+        image: a.image || '',
+        description: a.description || '',
       }))
       : [],
   };
@@ -108,7 +111,9 @@ export const clientApi = {
             name: c.name,
             slug: c.slug,
             description: c.description || '',
-            iconName: c.iconName || 'House',
+            iconName: c.iconName || c.icon || 'House',
+            icon: c.icon || c.iconName || 'House',
+            image: c.image || '',
           }));
         }
       }
@@ -126,7 +131,7 @@ export const clientApi = {
         customerPhone: bookingPayload.customerPhone,
         customerEmail: bookingPayload.customerEmail,
         service: bookingPayload.service,
-        variants: bookingPayload.variants,
+
         addons: bookingPayload.addons,
         area: 'Dubai',
         address: bookingPayload.addressDetails || 'TBD',
@@ -208,6 +213,35 @@ export const clientApi = {
       }
     } catch (err) {
       console.warn('Error fetching cleaners from backend:', err);
+    }
+    return [];
+  },
+
+  // 5b. Fetch Available Cleaners for a Date/Time
+  async getAvailableCleaners(params: { date: string; timeSlot?: string; lat?: number; lng?: number }): Promise<any[]> {
+    try {
+      const url = new URL(`${API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`}/cleaners/availability`);
+      url.searchParams.append('date', params.date);
+      if (params.timeSlot) url.searchParams.append('timeSlot', params.timeSlot);
+      if (params.lat) url.searchParams.append('lat', params.lat.toString());
+      if (params.lng) url.searchParams.append('lng', params.lng.toString());
+
+      const res = await fetch(url.toString());
+      if (res.ok) {
+        const json = await res.json();
+        const cleaners = json.data || json;
+        if (Array.isArray(cleaners)) {
+          return cleaners.map((c: any) => ({
+            id: c._id || c.id,
+            name: c.name || c.fullName,
+            rating: c.rating ? `★ ${c.rating}` : '★ 4.9',
+            avatar: c.avatarUrl || c.avatar || '',
+            busySlots: c.busySlots || [],
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching available cleaners:', err);
     }
     return [];
   },
@@ -373,18 +407,18 @@ export const clientApi = {
   async uploadImage(file: File): Promise<{ url: string; filename: string }> {
     const formData = new FormData();
     formData.append('image', file);
-    
+
     const res = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
       body: formData,
       credentials: 'include',
     });
-    
+
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       throw new Error(errorData.message || `Upload failed: ${res.statusText}`);
     }
-    
+
     const json = await res.json();
     return json.data;
   },

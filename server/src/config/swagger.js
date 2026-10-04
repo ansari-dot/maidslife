@@ -125,7 +125,7 @@ export const swaggerSpec = {
     { name: 'Auth', description: 'Authentication & Session operations' },
     { name: 'Categories', description: 'Catalog category hierarchy' },
     { name: 'Services', description: 'Home service offerings & Sharp image uploads' },
-    { name: 'Variants', description: 'Service variant pricing & duration options' },
+
     { name: 'Addons', description: 'Service add-on extras' },
     { name: 'Bookings', description: 'Booking dispatch, status updates & cleaner assignment' },
     { name: 'Cleaners', description: 'Cleaner fleet management & duty status' },

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createCleaner,
   getCleaners,
+  getAvailableCleaners,
   getCleanerById,
   updateCleaner,
   updateCleanerStatus,
@@ -24,6 +25,8 @@ router
   .route('/')
   .get(getCleaners)
   .post(verifyJWT, authorizeRoles('super_admin', 'ops_manager'), validate(createCleanerSchema), createCleaner);
+
+router.get('/availability', getAvailableCleaners);
 
 router
   .route('/:id')

@@ -23,7 +23,6 @@ export const ServicesView: React.FC = () => {
   const {
     services,
     categories,
-    variants,
     addService,
     updateService,
     deleteService,
@@ -43,11 +42,13 @@ export const ServicesView: React.FC = () => {
   const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
   const [startingPrice, setStartingPrice] = useState<number>(120);
+  const [extraProfessionalPrice, setExtraProfessionalPrice] = useState<number>(0);
   const [image, setImage] = useState('');
   const [iconName, setIconName] = useState('Sparkles');
   const [features, setFeatures] = useState<string[]>([]);
   const [featureInput, setFeatureInput] = useState('');
   const [status, setStatus] = useState<'active' | 'draft' | 'archived'>('active');
+  const [variants, setVariants] = useState<{name: string, price: number, image: string, isActive: boolean}[]>([]);
   const [formError, setFormError] = useState('');
 
   const openAddModal = () => {
@@ -58,11 +59,13 @@ export const ServicesView: React.FC = () => {
     setTagline('');
     setDescription('');
     setStartingPrice(120);
+    setExtraProfessionalPrice(0);
     setImage('');
     setIconName('Sparkles');
     setFeatures([]);
     setFeatureInput('');
     setStatus('active');
+    setVariants([]);
     setFormError('');
     setModalOpen(true);
   };
@@ -75,11 +78,13 @@ export const ServicesView: React.FC = () => {
     setTagline(srv.tagline || '');
     setDescription(srv.description || '');
     setStartingPrice(srv.startingPrice);
+    setExtraProfessionalPrice(srv.extraProfessionalPrice || 0);
     setImage(srv.image || '');
     setIconName(srv.iconName || 'Sparkles');
     setFeatures(srv.features || []);
     setFeatureInput('');
     setStatus(srv.status);
+    setVariants(srv.variants?.map(v => ({ name: v.name, price: v.price, image: v.image || '', isActive: v.isActive })) || []);
     setFormError('');
     setModalOpen(true);
   };
@@ -131,10 +136,12 @@ export const ServicesView: React.FC = () => {
         tagline: tagline.trim(),
         description: description.trim(),
         startingPrice: Number(startingPrice),
+        extraProfessionalPrice: Number(extraProfessionalPrice),
         image,
         iconName,
         features,
         status,
+        variants,
       });
     } else {
       addService({
@@ -148,6 +155,7 @@ export const ServicesView: React.FC = () => {
         iconName,
         features,
         status,
+        variants,
         rating: 4.8,
       });
     }
@@ -228,8 +236,7 @@ export const ServicesView: React.FC = () => {
                 <th className="py-3 px-4">Service Name</th>
                 <th className="py-3 px-4">Category</th>
                 <th className="py-3 px-4">Starting Price</th>
-                <th className="py-3 px-4 text-center">Variants</th>
-                <th className="py-3 px-4 text-center">Rating</th>
+                                <th className="py-3 px-4 text-center">Rating</th>
                 <th className="py-3 px-4 text-center">Status</th>
                 <th className="py-3 px-5 text-right">Actions</th>
               </tr>
@@ -237,8 +244,7 @@ export const ServicesView: React.FC = () => {
             <tbody className="divide-y divide-slate-100 font-medium">
               {filteredServices.map((srv) => {
                 const parentCat = categories.find((c) => c.id === srv.categoryId);
-                const linkedVariants = variants.filter((v) => v.serviceId === srv.id);
-
+                
                 return (
                   <tr key={srv.id} className="hover:bg-slate-50/60 transition group">
                     {/* Thumbnail */}
@@ -273,17 +279,7 @@ export const ServicesView: React.FC = () => {
                       AED {srv.startingPrice}
                     </td>
 
-                    {/* Variants Count & Shortcut */}
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => setActiveTab('variants')}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-sky-50 text-sky-700 hover:bg-sky-100 transition"
-                        title="Click to view & manage variants"
-                      >
-                        <SlidersHorizontal className="w-3 h-3" />
-                        <span>{linkedVariants.length}</span>
-                      </button>
-                    </td>
+
 
                     {/* Rating */}
                     <td className="py-3 px-4 text-center">
@@ -387,7 +383,7 @@ export const ServicesView: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Slug */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -414,6 +410,19 @@ export const ServicesView: React.FC = () => {
                 value={startingPrice}
                 onChange={(e) => setStartingPrice(Number(e.target.value))}
                 required
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+              />
+            </div>
+            {/* Extra Professional Price */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Extra Professional (AED)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={extraProfessionalPrice}
+                onChange={(e) => setExtraProfessionalPrice(Number(e.target.value))}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
               />
             </div>
@@ -537,6 +546,106 @@ export const ServicesView: React.FC = () => {
                 <option value="draft">Draft (Internal)</option>
                 <option value="archived">Archived</option>
               </select>
+            </div>
+          </div>
+
+          {/* Variants Management */}
+          <div className="pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-slate-700">
+                Service Variants / Options
+              </label>
+              <button
+                type="button"
+                onClick={() => setVariants([...variants, { name: '', price: 0, image: '', isActive: true }])}
+                className="px-2.5 py-1 bg-sky-50 text-sky-600 hover:bg-sky-100 rounded-lg text-xs font-semibold flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                Add Variant
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              {variants.map((variant, idx) => (
+                <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-700">Variant #{idx + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => setVariants(variants.filter((_, i) => i !== idx))}
+                      className="text-slate-400 hover:text-rose-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <input
+                        type="text"
+                        value={variant.name}
+                        onChange={(e) => {
+                          const newVariants = [...variants];
+                          newVariants[idx].name = e.target.value;
+                          setVariants(newVariants);
+                        }}
+                        placeholder="Variant Name *"
+                        required
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        min={0}
+                        value={variant.price}
+                        onChange={(e) => {
+                          const newVariants = [...variants];
+                          newVariants[idx].price = Number(e.target.value);
+                          setVariants(newVariants);
+                        }}
+                        placeholder="Price (AED) *"
+                        required
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1">
+                      <FileUploadInput
+                        label="Variant Image"
+                        value={variant.image || ''}
+                        onChange={(url) => {
+                          const newVariants = [...variants];
+                          newVariants[idx].image = url;
+                          setVariants(newVariants);
+                        }}
+                        hint="Upload image for this variant"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-2 sm:mt-6">
+                      <input
+                        type="checkbox"
+                        checked={variant.isActive}
+                        onChange={(e) => {
+                          const newVariants = [...variants];
+                          newVariants[idx].isActive = e.target.checked;
+                          setVariants(newVariants);
+                        }}
+                        className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                      />
+                      <span className="text-xs font-semibold text-slate-700">Active Option</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {variants.length === 0 && (
+                <div className="text-center py-4 bg-slate-50 border border-slate-200 border-dashed rounded-xl">
+                  <p className="text-xs text-slate-500">No variants added yet. Add variants if this service has multiple options.</p>
+                </div>
+              )}
             </div>
           </div>
 

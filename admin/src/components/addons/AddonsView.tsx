@@ -6,13 +6,43 @@ import {
   Search,
   Clock,
   Sparkles,
-  ToggleLeft,
-  ToggleRight,
+  Image as ImageIcon,
+  Loader2,
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { ServiceAddon } from '../../types';
+import { DynamicIcon, AVAILABLE_ICONS } from '../common/IconHelper';
 import { Modal } from '../common/Modal';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { FileUploadInput, PresetOption } from '../common/FileUploadInput';
+import { apiService } from '../../services/apiService';
+
+const ADDON_PRESETS: PresetOption[] = [
+  {
+    label: 'Refrigerator Clean',
+    url: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Oven Degreasing',
+    url: 'https://images.unsplash.com/photo-1590794056226-77ef3a6c4743?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Balcony Jet Wash',
+    url: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Laundry & Ironing',
+    url: 'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Cupboard Organizing',
+    url: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=600&auto=format&fit=crop&q=80',
+  },
+  {
+    label: 'Window Wash',
+    url: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?w=600&auto=format&fit=crop&q=80',
+  },
+];
 
 export const AddonsView: React.FC = () => {
   const { addons, services, addAddon, updateAddon, deleteAddon } = useAdmin();
@@ -22,12 +52,17 @@ export const AddonsView: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAddon, setEditingAddon] = useState<ServiceAddon | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form State
   const [serviceId, setServiceId] = useState('');
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number>(60);
   const [duration, setDuration] = useState('+30 mins');
+  const [iconName, setIconName] = useState('Sparkles');
+  const [image, setImage] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [formError, setFormError] = useState('');
 
@@ -35,8 +70,12 @@ export const AddonsView: React.FC = () => {
     setEditingAddon(null);
     setServiceId(services[0]?.id || '');
     setName('');
+    setDescription('');
     setPrice(60);
     setDuration('+30 mins');
+    setIconName('Sparkles');
+    setImage('');
+    setSelectedFile(null);
     setIsActive(true);
     setFormError('');
     setModalOpen(true);
@@ -46,14 +85,27 @@ export const AddonsView: React.FC = () => {
     setEditingAddon(adn);
     setServiceId(adn.serviceId);
     setName(adn.name);
+    setDescription(adn.description || '');
     setPrice(adn.price);
     setDuration(adn.duration || '+30 mins');
+    setIconName(adn.iconName || adn.icon || 'Sparkles');
+    setImage(adn.image || '');
+    setSelectedFile(null);
     setIsActive(adn.isActive);
     setFormError('');
     setModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleImageChange = (fileUrl: string, file?: File) => {
+    setImage(fileUrl);
+    if (file) {
+      setSelectedFile(file);
+    } else {
+      setSelectedFile(null);
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setFormError('Add-on name is required');
@@ -68,25 +120,56 @@ export const AddonsView: React.FC = () => {
       return;
     }
 
-    if (editingAddon) {
-      updateAddon(editingAddon.id, {
-        serviceId,
-        name: name.trim(),
-        price: Number(price),
-        duration: duration.trim(),
-        isActive,
-      });
-    } else {
-      addAddon({
-        serviceId,
-        name: name.trim(),
-        price: Number(price),
-        duration: duration.trim(),
-        isActive,
-      });
-    }
+    setIsSaving(true);
+    setFormError('');
 
-    setModalOpen(false);
+    try {
+      let finalImageUrl = image;
+
+      // Upload file to server if selected locally
+      if (selectedFile) {
+        try {
+          const uploadRes = await apiService.uploadImage(selectedFile);
+          if (uploadRes && uploadRes.url) {
+            finalImageUrl = uploadRes.url;
+          }
+        } catch (uploadErr: any) {
+          console.warn('Image upload fallback to preview:', uploadErr);
+        }
+      }
+
+      if (editingAddon) {
+        await updateAddon(editingAddon.id, {
+          serviceId,
+          name: name.trim(),
+          description: description.trim(),
+          price: Number(price),
+          duration: duration.trim(),
+          iconName,
+          icon: iconName,
+          image: finalImageUrl,
+          isActive,
+        });
+      } else {
+        await addAddon({
+          serviceId,
+          name: name.trim(),
+          description: description.trim(),
+          price: Number(price),
+          duration: duration.trim(),
+          iconName,
+          icon: iconName,
+          image: finalImageUrl,
+          isActive,
+        });
+      }
+
+      setModalOpen(false);
+    } catch (err: any) {
+      setFormError(err.message || 'Failed to save add-on. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const filteredAddons = addons.filter((adn) => {
@@ -103,7 +186,7 @@ export const AddonsView: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Add-ons Management</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manage optional extra cleaning items customers can add to their bookings
+            Manage optional extra cleaning items, add-on images, icons, and pricing
           </p>
         </div>
         <button
@@ -155,7 +238,8 @@ export const AddonsView: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-100">
               <tr>
-                <th className="py-3 px-5">Add-on Item</th>
+                <th className="py-3 px-5">Image & Icon</th>
+                <th className="py-3 px-4">Add-on Item</th>
                 <th className="py-3 px-4">Associated Service</th>
                 <th className="py-3 px-4">Extra Time</th>
                 <th className="py-3 px-4">Price</th>
@@ -164,86 +248,115 @@ export const AddonsView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredAddons.map((adn) => {
-                const parentService = services.find((s) => s.id === adn.serviceId);
+              {filteredAddons.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <p className="text-sm font-semibold">No add-ons found</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {search ? 'Try adjusting your search criteria' : 'Click "Add Add-on" to create your first add-on item'}
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                filteredAddons.map((adn) => {
+                  const parentService = services.find((s) => s.id === adn.serviceId);
 
-                return (
-                  <tr key={adn.id} className="hover:bg-slate-50/60 transition group">
-                    {/* Add-on Name */}
-                    <td className="py-3.5 px-5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
-                          <Sparkles className="w-3.5 h-3.5" />
+                  return (
+                    <tr key={adn.id} className="hover:bg-slate-50/60 transition group">
+                      {/* Image & Icon Thumbnail */}
+                      <td className="py-3.5 px-5">
+                        <div className="relative w-11 h-9 rounded-xl overflow-hidden border border-slate-200 shadow-2xs shrink-0 bg-slate-100 flex items-center justify-center">
+                          {adn.image ? (
+                            <img
+                              src={adn.image}
+                              alt={adn.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <ImageIcon className="w-4 h-4 text-slate-400" />
+                          )}
+                          <div className="absolute top-0.5 right-0.5 w-4 h-4 rounded-md bg-white/90 backdrop-blur-xs text-sky-600 flex items-center justify-center shadow-2xs border border-slate-200/60">
+                            <DynamicIcon name={adn.iconName || adn.icon || 'Sparkles'} className="w-2.5 h-2.5" />
+                          </div>
                         </div>
-                        <span className="font-bold text-slate-900 text-sm">{adn.name}</span>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Associated Service */}
-                    <td className="py-3.5 px-4 text-slate-600">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700">
-                        {parentService?.name || 'General Service'}
-                      </span>
-                    </td>
+                      {/* Add-on Name & Description */}
+                      <td className="py-3.5 px-4">
+                        <span className="font-bold text-slate-900 text-sm block">{adn.name}</span>
+                        {adn.description && (
+                          <p className="text-[11px] text-slate-400 line-clamp-1 max-w-xs font-normal">
+                            {adn.description}
+                          </p>
+                        )}
+                      </td>
 
-                    {/* Duration */}
-                    <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
-                      {adn.duration ? (
-                        <span className="inline-flex items-center gap-1 text-[11px]">
-                          <Clock className="w-3 h-3 text-slate-400" />
-                          {adn.duration}
+                      {/* Associated Service */}
+                      <td className="py-3.5 px-4 text-slate-600">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700">
+                          {parentService?.name || 'General Service'}
                         </span>
-                      ) : (
-                        <span className="text-slate-300">—</span>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Price */}
-                    <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
-                      AED {adn.price}
-                    </td>
-
-                    {/* Active toggle */}
-                    <td className="py-3.5 px-4 text-center">
-                      <button
-                        onClick={() => updateAddon(adn.id, { isActive: !adn.isActive })}
-                        className="cursor-pointer"
-                        title={adn.isActive ? 'Active on booking flow' : 'Inactive'}
-                      >
-                        {adn.isActive ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                            Active
+                      {/* Duration */}
+                      <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                        {adn.duration ? (
+                          <span className="inline-flex items-center gap-1 text-[11px]">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            {adn.duration}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
-                            Inactive
-                          </span>
+                          <span className="text-slate-300">—</span>
                         )}
-                      </button>
-                    </td>
+                      </td>
 
-                    {/* Actions */}
-                    <td className="py-3.5 px-5 text-right">
-                      <div className="inline-flex items-center gap-1.5">
+                      {/* Price */}
+                      <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
+                        AED {adn.price}
+                      </td>
+
+                      {/* Active toggle */}
+                      <td className="py-3.5 px-4 text-center">
                         <button
-                          onClick={() => openEditModal(adn)}
-                          className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition"
-                          title="Edit Add-on"
+                          onClick={() => updateAddon(adn.id, { isActive: !adn.isActive })}
+                          className="cursor-pointer"
+                          title={adn.isActive ? 'Active on booking flow' : 'Inactive'}
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          {adn.isActive ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                              Inactive
+                            </span>
+                          )}
                         </button>
-                        <button
-                          onClick={() => setDeletingId(adn.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                          title="Delete Add-on"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-5 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            onClick={() => openEditModal(adn)}
+                            className="p-1.5 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition"
+                            title="Edit Add-on"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setDeletingId(adn.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                            title="Delete Add-on"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -252,9 +365,10 @@ export const AddonsView: React.FC = () => {
       {/* Add / Edit Add-on Modal */}
       <Modal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => !isSaving && setModalOpen(false)}
         title={editingAddon ? 'Edit Add-on Option' : 'Add New Add-on Option'}
-        subtitle="Manage extras like refrigerator interior clean, oven degrease, etc."
+        subtitle="Manage extras, add-on images, icons, and pricing"
+        maxWidth="max-w-2xl"
       >
         <form onSubmit={handleSave} className="space-y-4">
           {formError && (
@@ -263,101 +377,154 @@ export const AddonsView: React.FC = () => {
             </div>
           )}
 
-          {/* Service Selector */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Associated Service *
-            </label>
-            <select
-              value={serviceId}
-              onChange={(e) => setServiceId(e.target.value)}
-              required
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
-            >
-              {services.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Name */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Add-on Name *
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Refrigerator Internal Wash & Descaling"
-              maxLength={60}
-              required
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
-            />
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Price */}
+            {/* Service Selector */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Add-on Price (AED) *
+                Associated Service *
               </label>
-              <input
-                type="number"
-                min={1}
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
+              <select
+                value={serviceId}
+                onChange={(e) => setServiceId(e.target.value)}
                 required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
-              />
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+              >
+                {services.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Added Duration */}
+            {/* Name */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Added Time
+                Add-on Name *
               </label>
               <input
                 type="text"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                placeholder="e.g. +30 mins"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Refrigerator Internal Wash"
+                maxLength={60}
+                required
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
               />
             </div>
           </div>
 
-          {/* Active status */}
-          <div className="pt-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500"
-              />
-              <span className="text-xs text-slate-700 font-medium">
-                Make add-on available for booking on user portal
-              </span>
+          {/* Add-on Image Upload Input */}
+          <FileUploadInput
+            label="Add-on Banner Image"
+            value={image}
+            onChange={handleImageChange}
+            hint="Upload custom add-on image file or select from preset add-on templates"
+            presets={ADDON_PRESETS}
+          />
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Short Description / Instructions
             </label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g. Deep scrub and steam wash of internal shelves and door seals"
+              maxLength={150}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Icon Selector */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Add-on Icon Symbol
+              </label>
+              <div className="grid grid-cols-5 gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl max-h-32 overflow-y-auto">
+                {AVAILABLE_ICONS.map((icon) => (
+                  <button
+                    key={icon}
+                    type="button"
+                    onClick={() => setIconName(icon)}
+                    className={`p-2 rounded-lg flex flex-col items-center justify-center gap-1 transition ${
+                      iconName === icon
+                        ? 'bg-sky-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    <DynamicIcon name={icon} className="w-4 h-4" />
+                    <span className="text-[9px] truncate max-w-full font-medium">{icon}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Price, Time & Active Status */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Add-on Price (AED) *
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={price}
+                  onChange={(e) => setPrice(Number(e.target.value))}
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Added Time Duration
+                </label>
+                <input
+                  type="text"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder="e.g. +30 mins"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+                />
+              </div>
+
+              <div className="pt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500"
+                  />
+                  <span className="text-xs text-slate-700 font-medium">
+                    Available on customer booking portal
+                  </span>
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Form Actions */}
           <div className="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <button
               type="button"
+              disabled={isSaving}
               onClick={() => setModalOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-xs transition"
+              disabled={isSaving}
+              className="px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-xs transition flex items-center gap-2 disabled:opacity-50"
             >
-              {editingAddon ? 'Save Add-on' : 'Create Add-on'}
+              {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{editingAddon ? 'Save Add-on' : 'Create Add-on'}</span>
             </button>
           </div>
         </form>

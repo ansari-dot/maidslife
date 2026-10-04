@@ -6,6 +6,8 @@ export interface ServiceCategory {
   slug: string;
   description: string;
   iconName: string;
+  icon?: string;
+  image?: string;
   sortOrder: number;
   isActive: boolean;
   servicesCount?: number;
@@ -19,23 +21,21 @@ export interface ServiceItem {
   tagline: string;
   description: string;
   startingPrice: number;
+  extraProfessionalPrice?: number;
   image: string;
   iconName: string;
   features: string[];
   status: 'active' | 'draft' | 'archived';
   rating: number;
-  variantsCount?: number;
+  variants?: {
+    _id?: string;
+    name: string;
+    price: number;
+    image?: string;
+    isActive: boolean;
+  }[];
 }
 
-export interface ServiceVariant {
-  id: string;
-  serviceId: string;
-  name: string;
-  price: number;
-  originalPrice: number;
-  duration: string;
-  description: string;
-}
 
 export interface ServiceAddon {
   id: string;
@@ -43,6 +43,10 @@ export interface ServiceAddon {
   name: string;
   price: number;
   duration?: string;
+  icon?: string;
+  iconName?: string;
+  image?: string;
+  description?: string;
   isActive: boolean;
 }
 
@@ -63,8 +67,8 @@ export interface BookingDetails {
   customerEmail: string;
   serviceId: string;
   serviceName: string;
-  variantId: string;
-  variantName: string;
+  variantId?: string;
+  variantName?: string;
   addonIds: string[];
   addonNames?: string[];
   cleanerId: string | null;

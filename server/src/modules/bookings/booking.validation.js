@@ -7,8 +7,10 @@ export const createBookingSchema = z.object({
     customerPhone: z.string().optional(),
     customerEmail: z.string().optional(),
     service: z.string().min(1, 'Service ID is required'),
-    variants: z.array(z.string()).optional(),
+
     addons: z.array(z.string()).optional(),
+    variantId: z.string().optional(),
+    variantName: z.string().optional(),
     cleaner: z.string().optional(),
     area: z.string().min(1, 'Area is required'),
     address: z.string().min(1, 'Address is required'),

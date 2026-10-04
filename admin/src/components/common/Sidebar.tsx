@@ -49,8 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'categories', label: 'Categories', icon: FolderTree },
     { id: 'services', label: 'Services', icon: Sparkles },
-    { id: 'variants', label: 'Variants', icon: SlidersHorizontal },
-    { id: 'addons', label: 'Add-ons', icon: PlusSquare },
+        { id: 'addons', label: 'Add-ons', icon: PlusSquare },
     {
       id: 'bookings',
       label: 'Bookings',

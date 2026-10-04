@@ -4,7 +4,12 @@ import { getPaginationOptions, getPaginationMeta } from '../../utils/pagination.
 
 export class AddonService {
   static async createAddon(data) {
-    const addon = await Addon.create(data);
+    const payload = {
+      ...data,
+      icon: data.icon || data.iconName || '',
+      image: data.image || '',
+    };
+    const addon = await Addon.create(payload);
     return addon;
   }
 
@@ -42,6 +47,9 @@ export class AddonService {
   }
 
   static async updateAddon(id, updateData) {
+    if (updateData.iconName && !updateData.icon) {
+      updateData.icon = updateData.iconName;
+    }
     const addon = await Addon.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,

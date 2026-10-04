@@ -1,10 +1,13 @@
 export interface ServiceVariant {
   id: string;
+  _id?: string;
   name: string;
   price: number;
-  originalPrice: number;
-  duration: string;
-  description: string;
+  originalPrice?: number;
+  duration?: string;
+  description?: string;
+  image?: string;
+  isActive?: boolean;
 }
 
 export interface ServiceAddon {
@@ -13,6 +16,8 @@ export interface ServiceAddon {
   price: number;
   duration?: string;
   icon?: string;
+  image?: string;
+  description?: string;
 }
 
 export interface ServiceCategory {
@@ -21,6 +26,8 @@ export interface ServiceCategory {
   slug: string;
   description: string;
   iconName: string;
+  icon?: string;
+  image?: string;
 }
 
 export interface ServiceItem {
@@ -31,6 +38,7 @@ export interface ServiceItem {
   tagline: string;
   description: string;
   startingPrice: number;
+  extraProfessionalPrice?: number;
   rating: number;
   reviewsCount: number;
   image: string;

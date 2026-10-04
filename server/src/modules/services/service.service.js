@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Service } from './service.model.js';
-import { Variant } from '../variants/variant.model.js';
+
 import { Addon } from '../addons/addon.model.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { getPaginationOptions, getPaginationMeta } from '../../utils/pagination.js';
@@ -29,6 +29,18 @@ export class ServiceService {
     const serviceData = { ...data, slug };
     if (imageToSave) {
       serviceData.images = [imageToSave];
+    }
+
+    if (serviceData.variants && Array.isArray(serviceData.variants)) {
+      for (let i = 0; i < serviceData.variants.length; i++) {
+        const variant = serviceData.variants[i];
+        if (variant.image && variant.image.startsWith('data:image')) {
+          const base64Data = variant.image.split(';base64,').pop();
+          const buffer = Buffer.from(base64Data, 'base64');
+          const imageSizes = await processAndSaveImage(buffer, 'services/variants');
+          variant.image = imageSizes.full;
+        }
+      }
     }
 
     const service = await Service.create(serviceData);
@@ -61,9 +73,8 @@ export class ServiceService {
 
     const servicesWithDetails = await Promise.all(
       services.map(async (service) => {
-        const variants = await Variant.find({ service: service._id, isActive: true }).sort({ price: 1 }).lean();
         const addons = await Addon.find({ service: service._id, isActive: true }).sort({ price: 1 }).lean();
-        return { ...service, variants, addons };
+        return { ...service, addons };
       })
     );
 
@@ -76,20 +87,16 @@ export class ServiceService {
   static async getServiceById(idOrSlug) {
     const isObjectId = mongoose.Types.ObjectId.isValid(idOrSlug);
     const filter = isObjectId ? { _id: idOrSlug } : { slug: idOrSlug };
-    
+
     const service = await Service.findOne(filter).populate('category', 'name slug').lean();
     if (!service) {
       throw new ApiError(404, 'Service not found');
     }
 
-    const [variants, addons] = await Promise.all([
-      Variant.find({ service: service._id, isActive: true }).sort({ price: 1 }).lean(),
-      Addon.find({ service: service._id, isActive: true }).sort({ price: 1 }).lean(),
-    ]);
+    const addons = await Addon.find({ service: service._id, isActive: true }).sort({ price: 1 }).lean();
 
     return {
       ...service,
-      variants,
       addons,
     };
   }
@@ -109,6 +116,18 @@ export class ServiceService {
         updateData.images = [{ url: updateData.image, sizes: {} }];
       }
       delete updateData.image;
+    }
+
+    if (updateData.variants && Array.isArray(updateData.variants)) {
+      for (let i = 0; i < updateData.variants.length; i++) {
+        const variant = updateData.variants[i];
+        if (variant.image && variant.image.startsWith('data:image')) {
+          const base64Data = variant.image.split(';base64,').pop();
+          const buffer = Buffer.from(base64Data, 'base64');
+          const imageSizes = await processAndSaveImage(buffer, 'services/variants');
+          variant.image = imageSizes.full;
+        }
+      }
     }
 
     const service = await Service.findByIdAndUpdate(id, updateData, {

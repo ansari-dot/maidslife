@@ -13,6 +13,11 @@ export const getCleaners = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, cleaners, 'Cleaners retrieved successfully', meta));
 });
 
+export const getAvailableCleaners = asyncHandler(async (req, res) => {
+  const cleaners = await CleanerService.getAvailableCleaners(req.query);
+  return res.status(200).json(new ApiResponse(200, cleaners, 'Available cleaners retrieved successfully'));
+});
+
 export const getCleanerById = asyncHandler(async (req, res) => {
   const cleaner = await CleanerService.getCleanerById(req.params.id);
   return res.status(200).json(new ApiResponse(200, cleaner, 'Cleaner retrieved successfully'));

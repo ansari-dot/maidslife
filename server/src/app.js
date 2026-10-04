@@ -17,7 +17,7 @@ import morgan from 'morgan';
 import authRoutes from './modules/auth/auth.routes.js';
 import categoryRoutes from './modules/categories/category.routes.js';
 import serviceRoutes from './modules/services/service.routes.js';
-import variantRoutes from './modules/variants/variant.routes.js';
+
 import addonRoutes from './modules/addons/addon.routes.js';
 import bookingRoutes from './modules/bookings/booking.routes.js';
 import cleanerRoutes from './modules/cleaners/cleaner.routes.js';
@@ -53,7 +53,7 @@ app.use(
     origin: [
       env.CLIENT_URL,
       env.ADMIN_URL,
-      'http://localhost:3000', 
+      'http://localhost:3000',
       'http://localhost:3001',
       'https://maidslife.com',
       'https://www.maidslife.com',
@@ -122,7 +122,7 @@ const API_PREFIX = '/api/v1';
 app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/categories`, categoryRoutes);
 app.use(`${API_PREFIX}/services`, serviceRoutes);
-app.use(`${API_PREFIX}/variants`, variantRoutes);
+
 app.use(`${API_PREFIX}/addons`, addonRoutes);
 app.use(`${API_PREFIX}/bookings`, bookingRoutes);
 app.use(`${API_PREFIX}/cleaners`, cleanerRoutes);

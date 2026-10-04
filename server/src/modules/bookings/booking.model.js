@@ -37,16 +37,21 @@ const bookingSchema = new mongoose.Schema(
       ref: 'Service',
       required: [true, 'Service is required'],
     },
-    variants: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Variant',
-    }],
+
     addons: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Addon',
       },
     ],
+    variantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      sparse: true,
+    },
+    variantName: {
+      type: String,
+      default: '',
+    },
     cleaner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Cleaner',

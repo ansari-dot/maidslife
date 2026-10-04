@@ -43,6 +43,17 @@ const cleanerSchema = new mongoose.Schema(
       lng: Number,
       areaName: String,
     },
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number],
+        default: [55.2708, 25.2048], // [lng, lat] default Dubai
+      },
+    },
     activeBookingsCount: {
       type: Number,
       default: 0,
@@ -56,5 +67,7 @@ const cleanerSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+cleanerSchema.index({ location: '2dsphere' });
 
 export const Cleaner = mongoose.model('Cleaner', cleanerSchema);

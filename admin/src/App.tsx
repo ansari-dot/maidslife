@@ -12,7 +12,7 @@ import { Toast } from './components/common/Toast';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { CategoriesView } from './components/categories/CategoriesView';
 import { ServicesView } from './components/services/ServicesView';
-import { VariantsView } from './components/variants/VariantsView';
+
 import { AddonsView } from './components/addons/AddonsView';
 import { BookingsView } from './components/bookings/BookingsView';
 import { CleanersView } from './components/cleaners/CleanersView';
@@ -57,8 +57,7 @@ const AdminLayout: React.FC = () => {
         return <CategoriesView />;
       case 'services':
         return <ServicesView />;
-      case 'variants':
-        return <VariantsView />;
+
       case 'addons':
         return <AddonsView />;
       case 'bookings':

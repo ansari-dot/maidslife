@@ -88,15 +88,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
       }
     });
 
-    clientApi.getCleaners().then((clns) => {
-      if (isMounted && clns.length > 0) {
-        setCleanersList([
-          { id: 'auto', name: 'Auto Assign', rating: '★ 4.9', desc: "We'll assign the best professional" },
-          ...clns
-        ]);
-      }
-    });
-
+    // Fetch dynamic cleaners based on default date will be handled in a separate effect
     return () => {
       isMounted = false;
     };
@@ -163,6 +155,21 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   const [selectedDate, setSelectedDate] = useState(daysList[0].full);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('08:30-09:00');
 
+  // Dynamic Cleaner Availability
+  useEffect(() => {
+    const fetchAvailable = async () => {
+      const targetDate = daysList.find((d) => d.full === selectedDate)?.isoDate;
+      if (!targetDate) return;
+      
+      const clns = await clientApi.getAvailableCleaners({ date: targetDate });
+      setCleanersList([
+        { id: 'auto', name: 'Auto Assign', rating: '★ 4.9', desc: "We'll assign the best professional", busySlots: [] },
+        ...clns,
+      ]);
+    };
+    fetchAvailable();
+  }, [selectedDate]);
+
   const timeSlots = [
     '08:00-08:30',
     '08:30-09:00',
@@ -200,8 +207,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   // PRICE CALCULATIONS
   const variantsPrice = selectedService?.variants
     ? selectedService.variants
-      .filter((v) => selectedVariantIds.includes(v.id))
-      .reduce((sum, v) => sum + v.price, 0)
+      .filter((v) => selectedVariantIds.includes(v.id || (v as any)._id))
+      .reduce((sum, v) => sum + (v.price || 0), 0)
     : 0;
 
   const addonsPrice = selectedService?.addons
@@ -210,7 +217,13 @@ export const BookingPage: React.FC<BookingPageProps> = ({
       .reduce((sum, a) => sum + a.price, 0)
     : 0;
 
-  const basePrice = (variantsPrice || selectedService?.startingPrice || 0) + addonsPrice;
+  const baseServicePrice = (selectedService?.startingPrice || 0) * hours;
+  
+  const extraProPrice = selectedService?.extraProfessionalPrice
+    ? (professionalsCount - 1) * selectedService.extraProfessionalPrice * hours
+    : (baseServicePrice + addonsPrice) * (professionalsCount - 1);
+    
+  const basePrice = baseServicePrice + addonsPrice + extraProPrice + variantsPrice;
   const discountAmount = appliedCoupon
     ? (appliedCoupon.discountPercent
       ? (basePrice * appliedCoupon.discountPercent) / 100
@@ -249,9 +262,12 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     e.preventDefault();
     setIsSubmitting(true);
 
+    const selectedVariant = selectedService?.variants?.find((v) => selectedVariantIds.includes(v.id || (v as any)._id));
+
     const bookingPayload = {
       service: selectedService?.id,
-      variants: selectedVariantIds,
+      variantId: selectedVariantIds[0] || null,
+      variantName: selectedVariant?.name || '',
       addons: selectedAddonIds,
       category: selectedCategory,
       customerName,
@@ -393,7 +409,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     <label className="block text-xs font-extrabold text-[#0084FF] uppercase tracking-wider mb-2" style={{ fontFamily: M }}>
                       1. Select Category *
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="flex gap-3 overflow-x-auto pb-4 pt-1 snap-x scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
                       {categories.map((cat) => {
                         const isSelected = selectedCategory === cat.id;
                         return (
@@ -401,13 +417,23 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             key={cat.id}
                             type="button"
                             onClick={() => handleCategoryChange(cat.id)}
-                            className={`p-3 rounded-2xl border text-center transition-all text-xs font-bold cursor-pointer ${isSelected
-                                ? 'bg-[#0084FF] border-[#0084FF] text-white shadow-xs'
-                                : 'bg-slate-50 border-slate-200 text-[#0C3352] hover:bg-slate-100'
+                            className={`shrink-0 w-24 rounded-[14px] border-2 transition-all flex flex-col items-center cursor-pointer p-1 snap-start ${
+                              isSelected
+                                ? 'border-[#00D1FF] bg-white shadow-sm'
+                                : 'border-transparent bg-white hover:bg-slate-50'
                               }`}
                             style={{ fontFamily: M }}
                           >
-                            {cat.name}
+                            <div className="w-full h-16 bg-[#E8F6FA] rounded-xl overflow-hidden flex items-center justify-center mb-1.5">
+                              {cat.image ? (
+                                <img src={cat.image} alt={cat.name} className="w-full h-full object-cover mix-blend-multiply" />
+                              ) : (
+                                <div className="w-full h-full bg-[#E8F6FA]" />
+                              )}
+                            </div>
+                            <div className={`w-full text-center text-[12px] font-bold leading-tight px-0.5 ${isSelected ? 'text-[#00D1FF]' : 'text-slate-600'}`}>
+                              {cat.name}
+                            </div>
                           </button>
                         );
                       })}
@@ -419,7 +445,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     <label className="block text-xs font-extrabold text-[#0084FF] uppercase tracking-wider mb-2" style={{ fontFamily: M }}>
                       2. Select Service *
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-4">
                       {availableServices.map((s) => {
                         const isSelected = selectedService?.id === s.id;
                         return (
@@ -427,77 +453,173 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             key={s.id}
                             type="button"
                             onClick={() => handleServiceChange(s.id)}
-                            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col items-start gap-0.5 ${isSelected
-                                ? 'bg-[#E8F3FF] border-[#0084FF] shadow-xs'
-                                : 'bg-white border-slate-200 hover:border-slate-300'
+                            className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-4 ${isSelected
+                                ? 'bg-[#F2FBFF] border-[#00D1FF] shadow-sm ring-1 ring-[#00D1FF]'
+                                : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
                               }`}
                           >
-                            <span className="font-extrabold text-xs text-[#0C3352] w-full break-words" style={{ fontFamily: M }}>
-                              {s.name}
-                            </span>
-                            <span className="text-[11px] text-[#5A6E7F] line-clamp-1 w-full" style={{ fontFamily: M }}>
-                              Starting AED {s.startingPrice}
-                            </span>
+                            <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-xl overflow-hidden bg-[#F8F9FA] flex items-center justify-center">
+                              {s.image ? (
+                                <img src={s.image} alt={s.name} className="w-full h-full object-cover mix-blend-multiply" />
+                              ) : (
+                                <span className="text-slate-300 text-xs font-bold">No image</span>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1 flex flex-col justify-between h-full min-h-[5rem] sm:min-h-[6rem]">
+                              <div>
+                                <h3 className="font-extrabold text-[#0C3352] text-sm sm:text-[17px] leading-tight mb-1" style={{ fontFamily: M }}>
+                                  {s.name}
+                                </h3>
+                                <p className="text-[#5A6E7F] text-[11px] sm:text-[13px] leading-snug line-clamp-2" style={{ fontFamily: M }}>
+                                  {s.tagline || s.description}
+                                </p>
+                              </div>
+                              <div className="flex items-center justify-between mt-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-normal text-slate-500 line-through text-xs" style={{ fontFamily: M }}>
+                                    {s.startingPrice > 0 ? `AED ${s.startingPrice + 30}` : ''}
+                                  </span>
+                                  <span className="font-extrabold text-[#0C3352] text-[15px]" style={{ fontFamily: M }}>
+                                    AED {s.startingPrice}
+                                  </span>
+                                </div>
+                                <div className={`px-5 py-1.5 rounded-full text-[13px] font-extrabold transition-all shadow-sm ${
+                                  isSelected 
+                                    ? 'bg-[#0C3352] text-white' 
+                                    : 'bg-[#00D1FF] text-white hover:brightness-110'
+                                }`} style={{ fontFamily: M }}>
+                                  {isSelected ? 'Selected' : 'Add +'}
+                                </div>
+                              </div>
+                            </div>
                           </button>
                         );
                       })}
                     </div>
                   </div>
 
-                  {/* 3. VARIANT / OPTION CARDS */}
-                  <div>
-                    <label className="block text-xs font-extrabold text-[#0084FF] uppercase tracking-wider mb-2" style={{ fontFamily: M }}>
-                      3. Select Variant / Option ({selectedService?.name}) *
-                    </label>
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-                      {selectedService?.variants.length === 0 && (
-                        <p className="text-sm text-slate-500 italic p-4 bg-slate-50 rounded-xl border border-slate-200">
-                          No variants available for this service.
-                        </p>
-                      )}
-                      {selectedService?.variants.map((v) => {
-                        const isSelected = selectedVariantIds.includes(v.id);
-                        return (
-                          <div
-                            key={v.id}
-                            onClick={() => {
-                              if (selectedVariantIds.includes(v.id)) {
-                                setSelectedVariantIds(selectedVariantIds.filter(id => id !== v.id));
-                              } else {
-                                setSelectedVariantIds([...selectedVariantIds, v.id]);
-                              }
-                            }}
-                            className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${isSelected
-                                ? 'border-[#0084FF] bg-[#E8F3FF]/60 shadow-xs'
-                                : 'border-slate-200 bg-white hover:border-slate-300'
-                              }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className={`h-5 w-5 shrink-0 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-[#0084FF] bg-[#0084FF]' : 'border-slate-300'}`}>
-                                {isSelected && <Check size={12} weight="bold" className="text-white" />}
+                  {/* 2.5 VARIANT SELECTOR */}
+                  {(selectedService?.variants?.length || 0) > 0 && (
+                    <div>
+                      <label className="block text-xs font-extrabold text-[#0084FF] uppercase tracking-wider mb-2" style={{ fontFamily: M }}>
+                        Select Service Option / Variant *
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {selectedService?.variants?.filter(v => v.isActive !== false).map((v) => {
+                          const vId = v.id || (v as any)._id;
+                          const isSelected = selectedVariantIds.includes(vId);
+                          return (
+                            <button
+                              key={vId}
+                              type="button"
+                              onClick={() => setSelectedVariantIds([vId])}
+                              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col items-start gap-1 ${isSelected
+                                  ? 'bg-[#E8F3FF] border-[#0084FF] shadow-xs ring-1 ring-[#0084FF]'
+                                  : 'bg-white border-slate-200 hover:border-slate-300'
+                                }`}
+                            >
+                              <div className="flex items-center gap-3 w-full">
+                                {v.image && (
+                                  <img src={v.image} alt={v.name} className="w-12 h-12 rounded-lg object-cover bg-slate-100" />
+                                )}
+                                <div>
+                                  <span className="font-extrabold text-xs text-[#0C3352] w-full break-words" style={{ fontFamily: M }}>
+                                    {v.name}
+                                  </span>
+                                  {v.price > 0 && (
+                                    <span className="text-[11px] font-bold text-[#0084FF] block mt-0.5" style={{ fontFamily: M }}>
+                                      +AED {v.price}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <h4 className="text-[#0C3352] font-extrabold text-sm break-words" style={{ fontFamily: M }}>
-                                  {v.name}
-                                </h4>
-                                <p className="text-xs text-[#5A6E7F] mt-0.5 break-words line-clamp-2" style={{ fontFamily: M }}>
-                                  {v.duration} &bull; {v.description}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="text-right shrink-0">
-                              <span className="text-base font-extrabold text-[#0C3352]" style={{ fontFamily: M }}>
-                                AED {v.price}
-                              </span>
-                              <span className="block text-xs text-slate-400 line-through">
-                                AED {v.originalPrice}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
+                  )}
+
+                  {/* 3. CONFIGURATION (HOURS, PROFESSIONALS, MATERIALS) */}
+                  <div className="space-y-6 pt-4 border-t border-slate-100">
+                    
+                    {/* Hours Counter */}
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                      <div>
+                        <label className="block text-[#0C3352] text-[16px] font-extrabold m-0 mb-0.5" style={{ fontFamily: M }}>
+                          Duration
+                        </label>
+                        <p className="text-slate-500 text-xs" style={{ fontFamily: M }}>How many hours per professional?</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <button 
+                          onClick={() => setHours(Math.max(1, hours - 1))}
+                          className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <span className="text-[18px] font-extrabold text-[#0C3352] w-4 text-center" style={{ fontFamily: M }}>{hours}</span>
+                        <button 
+                          onClick={() => setHours(Math.min(8, hours + 1))}
+                          className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-[#00D1FF] hover:bg-slate-50 transition-all cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Professionals Counter */}
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                      <div>
+                        <label className="block text-[#0C3352] text-[16px] font-extrabold m-0 mb-0.5" style={{ fontFamily: M }}>
+                          Professionals
+                        </label>
+                        <p className="text-slate-500 text-xs" style={{ fontFamily: M }}>How many professionals do you need?</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <button 
+                          onClick={() => setProfessionalsCount(Math.max(1, professionalsCount - 1))}
+                          className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <span className="text-[18px] font-extrabold text-[#0C3352] w-4 text-center" style={{ fontFamily: M }}>{professionalsCount}</span>
+                        <button 
+                          onClick={() => setProfessionalsCount(Math.min(4, professionalsCount + 1))}
+                          className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-[#00D1FF] hover:bg-slate-50 transition-all cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Materials Toggle */}
+                    <div className="flex items-center justify-between pb-4">
+                      <div>
+                        <label className="block text-[#0C3352] text-[16px] font-extrabold m-0 mb-0.5" style={{ fontFamily: M }}>
+                          Cleaning Materials
+                        </label>
+                        <p className="text-slate-500 text-xs" style={{ fontFamily: M }}>Do you need us to bring materials? (+AED 10/hr)</p>
+                      </div>
+                      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full">
+                        <button 
+                          onClick={() => setNeedCleaningMaterials(false)}
+                          className={`px-5 py-1.5 rounded-full text-[13px] font-extrabold transition-all cursor-pointer ${!needCleaningMaterials ? 'bg-white shadow-sm text-[#0C3352]' : 'text-slate-500'}`}
+                          style={{ fontFamily: M }}
+                        >
+                          No
+                        </button>
+                        <button 
+                          onClick={() => setNeedCleaningMaterials(true)}
+                          className={`px-5 py-1.5 rounded-full text-[13px] font-extrabold transition-all cursor-pointer ${needCleaningMaterials ? 'bg-[#00D1FF] shadow-sm text-white' : 'text-slate-500'}`}
+                          style={{ fontFamily: M }}
+                        >
+                          Yes
+                        </button>
+                      </div>
+                    </div>
+
                   </div>
 
                   {/* 4. ADD-ONS SELECTOR */}
@@ -523,7 +645,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                 <div className={`h-4 w-4 shrink-0 rounded border flex items-center justify-center ${isChecked ? 'bg-[#0084FF] border-[#0084FF]' : 'border-slate-300 bg-white'}`}>
                                   {isChecked && <Check size={10} weight="bold" className="text-white" />}
                                 </div>
-                                <span className="break-words line-clamp-2">{addon.name}</span>
+                                {addon.image && (
+                                  <img src={addon.image} alt={addon.name} className="w-8 h-8 rounded-md object-cover shrink-0 bg-slate-100" />
+                                )}
+                                <span className="break-words line-clamp-2 leading-tight">{addon.name}</span>
                               </div>
                               <span className="font-extrabold shrink-0 pl-2">+AED {addon.price}</span>
                             </div>
@@ -621,19 +746,37 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       {timeSlots.map((slot, idx) => {
+                        let isBusy = false;
+                        if (selectedCleaner === 'Auto Assign') {
+                          const actualCleaners = cleanersList.filter((c: any) => c.id !== 'auto');
+                          if (actualCleaners.length > 0) {
+                            isBusy = actualCleaners.every((c: any) => c.busySlots?.includes(slot));
+                          }
+                        } else {
+                          const cl = cleanersList.find((c: any) => c.name === selectedCleaner);
+                          if (cl) {
+                            isBusy = cl.busySlots?.includes(slot);
+                          }
+                        }
+
                         const isSelected = selectedTimeSlot === slot;
                         return (
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => setSelectedTimeSlot(slot)}
-                            className={`py-2.5 px-3 rounded-full text-xs font-bold border transition-all cursor-pointer ${isSelected
-                                ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF]'
-                                : 'border-slate-200 bg-white text-[#0C3352] hover:border-slate-300'
+                            disabled={isBusy}
+                            onClick={() => !isBusy && setSelectedTimeSlot(slot)}
+                            className={`py-2.5 px-3 rounded-full text-xs font-bold border transition-all ${
+                              isBusy 
+                                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60' 
+                                : isSelected
+                                  ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF] cursor-pointer'
+                                  : 'border-slate-200 bg-white text-[#0C3352] hover:border-slate-300 cursor-pointer'
                               }`}
                             style={{ fontFamily: M }}
                           >
                             {slot}
+                            {isBusy && <span className="block text-[9px] text-rose-500 font-extrabold mt-0.5">Fully Booked</span>}
                           </button>
                         );
                       })}
@@ -844,17 +987,13 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                   </div>
 
                   <div className="flex justify-between items-start text-slate-500">
-                    <span>Selected Options / Variants ({selectedVariantIds.length})</span>
-                    <div className="text-right">
-                      {selectedService?.variants
-                        .filter((v) => selectedVariantIds.includes(v.id))
-                        .map((v) => (
-                          <span key={v.id} className="block font-bold text-[#0C3352]">
-                            {v.name} (AED {v.price})
-                          </span>
-                        ))}
-                      {selectedVariantIds.length === 0 && <span className="font-bold text-[#0C3352]">None</span>}
-                    </div>
+                    <span>Duration (Hours)</span>
+                    <span className="font-bold text-[#0C3352]">{hours} Hour(s)</span>
+                  </div>
+
+                  <div className="flex justify-between items-start text-slate-500">
+                    <span>Number of Professionals</span>
+                    <span className="font-bold text-[#0C3352]">{professionalsCount}</span>
                   </div>
 
                   {selectedAddonIds.length > 0 && selectedService?.addons && (
@@ -926,9 +1065,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
             <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-slate-200 text-left space-y-2 text-xs" style={{ fontFamily: M }}>
               <div className="flex justify-between"><span className="text-slate-500">Category:</span><span className="font-bold text-[#0C3352]">{categories.find((c) => c.id === selectedCategory)?.name || 'Residential Cleaning'}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Service:</span><span className="font-bold text-[#0C3352]">{selectedService?.name}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Options / Variants:</span><span className="font-bold text-[#0C3352]">
-                {selectedService?.variants.filter(v => selectedVariantIds.includes(v.id)).map(v => v.name).join(', ') || 'None'}
-              </span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Duration:</span><span className="font-bold text-[#0C3352]">{hours} Hour(s)</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Professionals:</span><span className="font-bold text-[#0C3352]">{professionalsCount}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Date &amp; Time:</span><span className="font-bold text-[#0C3352]">{selectedDate}, 2026 at {selectedTimeSlot}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Total Paid:</span><span className="font-bold text-emerald-600 text-sm">AED {totalPrice.toFixed(2)}</span></div>
             </div>
