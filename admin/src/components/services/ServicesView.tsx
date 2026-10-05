@@ -13,11 +13,75 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
-import { ServiceItem } from '../../types';
+import { ServiceItem, BookingType, BookingFieldConfig } from '../../types';
 import { DynamicIcon, AVAILABLE_ICONS } from '../common/IconHelper';
 import { Modal } from '../common/Modal';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { FileUploadInput } from '../common/FileUploadInput';
+
+const ALL_POSSIBLE_FIELDS = [
+  { key: 'duration', label: 'Duration (Hours)' },
+  { key: 'professionals', label: 'Professionals' },
+  { key: 'cleaningMaterials', label: 'Cleaning Materials' },
+  { key: 'quantity', label: 'Quantity / Item Count' },
+  { key: 'weight', label: 'Weight (KG)' },
+  { key: 'itemType', label: 'Item Type' },
+  { key: 'pickupLocation', label: 'Pickup Location' },
+  { key: 'dropoffLocation', label: 'Drop-off Location' },
+  { key: 'vehicleType', label: 'Vehicle Type' },
+  { key: 'driver', label: 'Driver / Resource' },
+  { key: 'propertyType', label: 'Property Type' },
+  { key: 'bedrooms', label: 'Bedrooms' },
+  { key: 'bathrooms', label: 'Bathrooms' },
+  { key: 'date', label: 'Date' },
+  { key: 'time', label: 'Time Slot' },
+  { key: 'address', label: 'Address' },
+  { key: 'specialInstructions', label: 'Special Instructions' },
+];
+
+function getPresetFields(type: BookingType): BookingFieldConfig[] {
+  switch (type) {
+    case 'LAUNDRY':
+      return [
+        { key: 'quantity', label: 'Quantity of Bags', enabled: true, required: true, order: 1 },
+        { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 2 },
+        { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 3 },
+        { key: 'address', label: 'Pickup Address', enabled: true, required: true, order: 4 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 5 },
+      ];
+    case 'LAUNDRY_ITEM':
+      return [
+        { key: 'itemType', label: 'Item Type', enabled: true, required: true, order: 1 },
+        { key: 'quantity', label: 'Item Quantity', enabled: true, required: true, order: 2 },
+        { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 3 },
+        { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 4 },
+        { key: 'address', label: 'Address', enabled: true, required: true, order: 5 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 6 },
+      ];
+    case 'DELIVERY':
+      return [
+        { key: 'pickupLocation', label: 'Pickup Location', enabled: true, required: true, order: 1 },
+        { key: 'dropoffLocation', label: 'Drop-off Location', enabled: true, required: true, order: 2 },
+        { key: 'vehicleType', label: 'Vehicle Type', enabled: true, required: true, order: 3 },
+        { key: 'driver', label: 'Driver / Resource', enabled: true, required: false, order: 4 },
+        { key: 'quantity', label: 'Item / Quantity', enabled: true, required: false, order: 5 },
+        { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 6 },
+        { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 7 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 8 },
+      ];
+    case 'CLEANING':
+    default:
+      return [
+        { key: 'duration', label: 'Duration (Hours)', enabled: true, required: true, order: 1 },
+        { key: 'professionals', label: 'Professionals', enabled: true, required: true, order: 2 },
+        { key: 'cleaningMaterials', label: 'Cleaning Materials', enabled: true, required: false, order: 3 },
+        { key: 'date', label: 'Date', enabled: true, required: true, order: 4 },
+        { key: 'time', label: 'Time Slot', enabled: true, required: true, order: 5 },
+        { key: 'address', label: 'Address', enabled: true, required: true, order: 6 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 7 },
+      ];
+  }
+}
 
 export const ServicesView: React.FC = () => {
   const {
@@ -48,6 +112,8 @@ export const ServicesView: React.FC = () => {
   const [features, setFeatures] = useState<string[]>([]);
   const [featureInput, setFeatureInput] = useState('');
   const [status, setStatus] = useState<'active' | 'draft' | 'archived'>('active');
+  const [bookingType, setBookingType] = useState<BookingType>('CLEANING');
+  const [bookingFields, setBookingFields] = useState<BookingFieldConfig[]>(getPresetFields('CLEANING'));
   const [variants, setVariants] = useState<{name: string, price: number, image: string, isActive: boolean}[]>([]);
   const [formError, setFormError] = useState('');
 
@@ -65,6 +131,8 @@ export const ServicesView: React.FC = () => {
     setFeatures([]);
     setFeatureInput('');
     setStatus('active');
+    setBookingType('CLEANING');
+    setBookingFields(getPresetFields('CLEANING'));
     setVariants([]);
     setFormError('');
     setModalOpen(true);
@@ -84,6 +152,9 @@ export const ServicesView: React.FC = () => {
     setFeatures(srv.features || []);
     setFeatureInput('');
     setStatus(srv.status);
+    const type = srv.bookingType || 'CLEANING';
+    setBookingType(type);
+    setBookingFields(srv.bookingFields && srv.bookingFields.length > 0 ? srv.bookingFields : getPresetFields(type));
     setVariants(srv.variants?.map(v => ({ name: v.name, price: v.price, image: v.image || '', isActive: v.isActive })) || []);
     setFormError('');
     setModalOpen(true);
@@ -113,6 +184,35 @@ export const ServicesView: React.FC = () => {
     setFeatures(features.filter((_, i) => i !== idx));
   };
 
+  const handleBookingTypeChange = (newType: BookingType) => {
+    setBookingType(newType);
+    setBookingFields(getPresetFields(newType));
+  };
+
+  const toggleFieldEnabled = (key: string) => {
+    setBookingFields(prev => {
+      const exists = prev.find(f => f.key === key);
+      if (exists) {
+        return prev.map(f => f.key === key ? { ...f, enabled: !f.enabled } : f);
+      } else {
+        const fieldMeta = ALL_POSSIBLE_FIELDS.find(f => f.key === key);
+        return [...prev, { key, label: fieldMeta?.label || key, enabled: true, required: false, order: prev.length + 1 }];
+      }
+    });
+  };
+
+  const toggleFieldRequired = (key: string) => {
+    setBookingFields(prev => prev.map(f => f.key === key ? { ...f, required: !f.required } : f));
+  };
+
+  const updateFieldOrder = (key: string, orderVal: number) => {
+    setBookingFields(prev => prev.map(f => f.key === key ? { ...f, order: orderVal } : f));
+  };
+
+  const updateFieldLabel = (key: string, labelVal: string) => {
+    setBookingFields(prev => prev.map(f => f.key === key ? { ...f, label: labelVal } : f));
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -128,34 +228,28 @@ export const ServicesView: React.FC = () => {
       return;
     }
 
+    const payloadData = {
+      categoryId,
+      name: name.trim(),
+      slug: slug.trim(),
+      tagline: tagline.trim(),
+      description: description.trim(),
+      startingPrice: Number(startingPrice),
+      extraProfessionalPrice: Number(extraProfessionalPrice),
+      image,
+      iconName,
+      features,
+      status,
+      bookingType,
+      bookingFields,
+      variants,
+    };
+
     if (editingService) {
-      updateService(editingService.id, {
-        categoryId,
-        name: name.trim(),
-        slug: slug.trim(),
-        tagline: tagline.trim(),
-        description: description.trim(),
-        startingPrice: Number(startingPrice),
-        extraProfessionalPrice: Number(extraProfessionalPrice),
-        image,
-        iconName,
-        features,
-        status,
-        variants,
-      });
+      updateService(editingService.id, payloadData);
     } else {
       addService({
-        categoryId,
-        name: name.trim(),
-        slug: slug.trim(),
-        tagline: tagline.trim(),
-        description: description.trim(),
-        startingPrice: Number(startingPrice),
-        image,
-        iconName,
-        features,
-        status,
-        variants,
+        ...payloadData,
         rating: 4.8,
       });
     }
@@ -546,6 +640,138 @@ export const ServicesView: React.FC = () => {
                 <option value="draft">Draft (Internal)</option>
                 <option value="archived">Archived</option>
               </select>
+            </div>
+          </div>
+
+          {/* BOOKING CONFIGURATION */}
+          <div className="pt-4 border-t border-slate-200/80 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Booking Configuration
+                </label>
+                <p className="text-[11px] text-slate-500">
+                  Configure requirement fields shown to customers during booking.
+                </p>
+              </div>
+
+              {/* Booking Type Select */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-600">Booking Type:</span>
+                <select
+                  value={bookingType}
+                  onChange={(e) => handleBookingTypeChange(e.target.value as BookingType)}
+                  className="bg-sky-50 border border-sky-200 text-sky-800 rounded-xl px-2.5 py-1 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/20 cursor-pointer"
+                >
+                  <option value="CLEANING">Cleaning Services (CLEANING)</option>
+                  <option value="LAUNDRY">Bag-Based Laundry (LAUNDRY)</option>
+                  <option value="LAUNDRY_ITEM">Individual Laundry Item (LAUNDRY_ITEM)</option>
+                  <option value="DELIVERY">Pick & Drop Delivery (DELIVERY)</option>
+                  <option value="CUSTOM">Custom Configuration (CUSTOM)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] font-semibold text-slate-400">Quick Presets:</span>
+              <button
+                type="button"
+                onClick={() => handleBookingTypeChange('CLEANING')}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer ${bookingType === 'CLEANING' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                Cleaning
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBookingTypeChange('LAUNDRY')}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer ${bookingType === 'LAUNDRY' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                Laundry (Bag)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBookingTypeChange('LAUNDRY_ITEM')}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer ${bookingType === 'LAUNDRY_ITEM' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                Laundry (Item)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBookingTypeChange('DELIVERY')}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition cursor-pointer ${bookingType === 'DELIVERY' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                Pick & Drop
+              </button>
+            </div>
+
+            {/* Configurable Fields Checklist Table */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2 max-h-60 overflow-y-auto">
+              <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider pb-1 border-b border-slate-200">
+                <span className="col-span-4">Field Name</span>
+                <span className="col-span-2 text-center">Enabled</span>
+                <span className="col-span-2 text-center">Required</span>
+                <span className="col-span-2 text-center">Order</span>
+                <span className="col-span-2">Custom Label</span>
+              </div>
+
+              {ALL_POSSIBLE_FIELDS.map((fieldMeta) => {
+                const config = bookingFields.find(f => f.key === fieldMeta.key);
+                const isEnabled = config?.enabled ?? false;
+                const isRequired = config?.required ?? false;
+                const orderVal = config?.order ?? 0;
+                const labelVal = config?.label ?? fieldMeta.label;
+
+                return (
+                  <div key={fieldMeta.key} className={`grid grid-cols-12 gap-2 items-center text-xs py-1.5 px-2 rounded-lg transition ${isEnabled ? 'bg-white border border-slate-200/70 shadow-2xs' : 'opacity-60'}`}>
+                    <span className="col-span-4 font-semibold text-slate-700 truncate" title={fieldMeta.label}>
+                      {fieldMeta.label}
+                    </span>
+                    
+                    <div className="col-span-2 flex justify-center">
+                      <input
+                        type="checkbox"
+                        checked={isEnabled}
+                        onChange={() => toggleFieldEnabled(fieldMeta.key)}
+                        className="rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="col-span-2 flex justify-center">
+                      <input
+                        type="checkbox"
+                        disabled={!isEnabled}
+                        checked={isRequired}
+                        onChange={() => toggleFieldRequired(fieldMeta.key)}
+                        className="rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer disabled:opacity-40"
+                      />
+                    </div>
+
+                    <div className="col-span-2 flex justify-center">
+                      <input
+                        type="number"
+                        min={1}
+                        max={99}
+                        disabled={!isEnabled}
+                        value={orderVal || ''}
+                        onChange={(e) => updateFieldOrder(fieldMeta.key, Number(e.target.value))}
+                        className="w-12 text-center bg-slate-50 border border-slate-200 rounded px-1 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 disabled:opacity-40"
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <input
+                        type="text"
+                        disabled={!isEnabled}
+                        value={labelVal}
+                        onChange={(e) => updateFieldLabel(fieldMeta.key, e.target.value)}
+                        placeholder={fieldMeta.label}
+                        className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-sky-500 disabled:opacity-40"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

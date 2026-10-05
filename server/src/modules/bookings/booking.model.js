@@ -124,6 +124,43 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    quantity: {
+      type: Number,
+      default: 1,
+    },
+    weight: {
+      type: Number,
+    },
+    itemType: {
+      type: String,
+      default: '',
+    },
+    pickupLocation: {
+      type: String,
+      default: '',
+    },
+    dropoffLocation: {
+      type: String,
+      default: '',
+    },
+    vehicleType: {
+      type: String,
+      default: '',
+    },
+    driver: {
+      type: String,
+      default: '',
+    },
+    propertyType: {
+      type: String,
+      default: '',
+    },
+    bedrooms: {
+      type: Number,
+    },
+    bathrooms: {
+      type: Number,
+    },
   },
   {
     timestamps: true,

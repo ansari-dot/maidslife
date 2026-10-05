@@ -13,6 +13,19 @@ export interface ServiceCategory {
   servicesCount?: number;
 }
 
+export type BookingType = 'CLEANING' | 'LAUNDRY' | 'LAUNDRY_ITEM' | 'DELIVERY' | 'CUSTOM';
+
+export interface BookingFieldConfig {
+  key: string;
+  label?: string;
+  enabled: boolean;
+  required: boolean;
+  order: number;
+  unit?: string;
+  minValue?: number;
+  maxValue?: number;
+}
+
 export interface ServiceItem {
   id: string;
   categoryId: string;
@@ -27,8 +40,11 @@ export interface ServiceItem {
   features: string[];
   status: 'active' | 'draft' | 'archived';
   rating: number;
+  bookingType?: BookingType;
+  bookingFields?: BookingFieldConfig[];
   variants?: {
     _id?: string;
+    id?: string;
     name: string;
     price: number;
     image?: string;

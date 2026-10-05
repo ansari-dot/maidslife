@@ -92,6 +92,23 @@ const serviceSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    bookingType: {
+      type: String,
+      enum: ['CLEANING', 'LAUNDRY', 'LAUNDRY_ITEM', 'DELIVERY', 'CUSTOM'],
+      default: 'CLEANING',
+    },
+    bookingFields: [
+      {
+        key: { type: String, required: true },
+        label: { type: String, default: '' },
+        enabled: { type: Boolean, default: true },
+        required: { type: Boolean, default: false },
+        order: { type: Number, default: 0 },
+        unit: { type: String, default: '' },
+        minValue: { type: Number },
+        maxValue: { type: Number },
+      },
+    ],
     variants: [variantSchema],
   },
   {

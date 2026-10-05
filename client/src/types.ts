@@ -1,3 +1,16 @@
+export type BookingType = 'CLEANING' | 'LAUNDRY' | 'LAUNDRY_ITEM' | 'DELIVERY' | 'CUSTOM';
+
+export interface BookingFieldConfig {
+  key: string;
+  label?: string;
+  enabled: boolean;
+  required: boolean;
+  order: number;
+  unit?: string;
+  minValue?: number;
+  maxValue?: number;
+}
+
 export interface ServiceItem {
   id: string;
   name: string;
@@ -11,6 +24,8 @@ export interface ServiceItem {
   badge?: string;
   description: string;
   highlights: string[];
+  bookingType?: BookingType;
+  bookingFields?: BookingFieldConfig[];
 }
 
 export interface FeatureItem {

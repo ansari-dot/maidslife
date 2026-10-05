@@ -8,6 +8,9 @@ import { sendEmail } from '../../config/mailer.js';
 
 import { Coupon } from '../coupons/coupon.model.js';
 
+import { Service } from '../services/service.model.js';
+import { getDefaultBookingFields } from '../services/service.service.js';
+
 export class BookingService {
   static async createBooking(data) {
     const session = await mongoose.startSession();
@@ -15,6 +18,50 @@ export class BookingService {
 
     try {
       const bookingRef = `ML-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      // Validate Service configuration fields
+      const serviceDoc = await Service.findById(data.service).session(session);
+      if (!serviceDoc) {
+        throw new ApiError(404, 'Service not found');
+      }
+
+      const activeBookingFields = (serviceDoc.bookingFields && serviceDoc.bookingFields.length > 0)
+        ? serviceDoc.bookingFields
+        : getDefaultBookingFields(serviceDoc.bookingType);
+
+      for (const field of activeBookingFields) {
+        if (field.enabled && field.required) {
+          let value;
+          switch (field.key) {
+            case 'variant': value = data.variantId || data.variantName; break;
+            case 'duration': value = data.hours; break;
+            case 'professionals': value = data.professionalsCount; break;
+            case 'cleaningMaterials': value = data.needCleaningMaterials; break;
+            case 'quantity': value = data.quantity; break;
+            case 'weight': value = data.weight; break;
+            case 'itemType': value = data.itemType; break;
+            case 'pickupLocation': value = data.pickupLocation; break;
+            case 'dropoffLocation': value = data.dropoffLocation; break;
+            case 'vehicleType': value = data.vehicleType; break;
+            case 'driver': value = data.driver || data.cleaner; break;
+            case 'propertyType': value = data.propertyType; break;
+            case 'bedrooms': value = data.bedrooms; break;
+            case 'bathrooms': value = data.bathrooms; break;
+            case 'date':
+            case 'time': value = data.scheduledAt; break;
+            case 'address': value = data.address || data.pickupLocation; break;
+            case 'addons': value = true; break;
+            default: break;
+          }
+          if (value === undefined || value === null || value === '') {
+            throw new ApiError(400, `Field '${field.label || field.key}' is required for this service`);
+          }
+        }
+      }
+
+      // Default safe fallbacks for area & address if not explicitly passed
+      data.area = data.area || 'Dubai';
+      data.address = data.address || data.pickupLocation || 'Dubai';
 
       // Handle customer auto-creation/lookup
       let customerId = data.customer;

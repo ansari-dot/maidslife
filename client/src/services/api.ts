@@ -14,8 +14,64 @@ const fetchApi = async (url: string, options: RequestInit = {}): Promise<Respons
   });
 };
 
+export function getDefaultBookingFields(bookingType: string = 'CLEANING') {
+  switch (bookingType) {
+    case 'LAUNDRY':
+      return [
+        { key: 'variant', label: 'Bag Option', enabled: true, required: true, order: 1 },
+        { key: 'quantity', label: 'Quantity of Bags', enabled: true, required: true, order: 2 },
+        { key: 'addons', label: 'Add-ons', enabled: true, required: false, order: 3 },
+        { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 4 },
+        { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 5 },
+        { key: 'address', label: 'Pickup Address', enabled: true, required: true, order: 6 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 7 },
+      ];
+    case 'LAUNDRY_ITEM':
+      return [
+        { key: 'variant', label: 'Garment Option', enabled: true, required: false, order: 1 },
+        { key: 'itemType', label: 'Item Type', enabled: true, required: true, order: 2 },
+        { key: 'quantity', label: 'Item Quantity', enabled: true, required: true, order: 3 },
+        { key: 'addons', label: 'Add-ons', enabled: true, required: false, order: 4 },
+        { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 5 },
+        { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 6 },
+        { key: 'address', label: 'Address', enabled: true, required: true, order: 7 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 8 },
+      ];
+    case 'DELIVERY':
+      return [
+        { key: 'pickupLocation', label: 'Pickup Location', enabled: true, required: true, order: 1 },
+        { key: 'dropoffLocation', label: 'Drop-off Location', enabled: true, required: true, order: 2 },
+        { key: 'vehicleType', label: 'Vehicle Type', enabled: true, required: true, order: 3 },
+        { key: 'driver', label: 'Driver / Resource', enabled: true, required: false, order: 4 },
+        { key: 'quantity', label: 'Item / Quantity', enabled: true, required: false, order: 5 },
+        { key: 'addons', label: 'Add-ons', enabled: true, required: false, order: 6 },
+        { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 7 },
+        { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 8 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 9 },
+      ];
+    case 'CLEANING':
+    default:
+      return [
+        { key: 'variant', label: 'Service Variant', enabled: true, required: false, order: 1 },
+        { key: 'duration', label: 'Duration (Hours)', enabled: true, required: true, order: 2 },
+        { key: 'professionals', label: 'Professionals', enabled: true, required: true, order: 3 },
+        { key: 'cleaningMaterials', label: 'Cleaning Materials', enabled: true, required: false, order: 4 },
+        { key: 'addons', label: 'Add-ons', enabled: true, required: false, order: 5 },
+        { key: 'date', label: 'Date', enabled: true, required: true, order: 6 },
+        { key: 'time', label: 'Time Slot', enabled: true, required: true, order: 7 },
+        { key: 'address', label: 'Address', enabled: true, required: true, order: 8 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 9 },
+      ];
+  }
+}
+
 // Format helper to map DB model fields to client UI ServiceItem shape
 const mapBackendServiceToClient = (svc: any): ServiceItem => {
+  const bType = svc.bookingType || 'CLEANING';
+  const bFields = Array.isArray(svc.bookingFields) && svc.bookingFields.length > 0
+    ? svc.bookingFields
+    : getDefaultBookingFields(bType);
+
   return {
     id: svc._id || svc.id,
     categoryId: typeof svc.category === 'object' ? svc.category?._id : svc.category,
@@ -29,6 +85,8 @@ const mapBackendServiceToClient = (svc: any): ServiceItem => {
     image: svc.images?.[0]?.url || svc.image || '',
     iconName: svc.iconName || 'House',
     features: Array.isArray(svc.features) ? svc.features : [],
+    bookingType: bType,
+    bookingFields: bFields,
     
     variants: Array.isArray(svc.variants)
       ? svc.variants.map((v: any) => ({
@@ -131,10 +189,11 @@ export const clientApi = {
         customerPhone: bookingPayload.customerPhone,
         customerEmail: bookingPayload.customerEmail,
         service: bookingPayload.service,
-
+        variantId: bookingPayload.variantId,
+        variantName: bookingPayload.variantName,
         addons: bookingPayload.addons,
-        area: 'Dubai',
-        address: bookingPayload.addressDetails || 'TBD',
+        area: bookingPayload.area || 'Dubai',
+        address: bookingPayload.addressDetails || bookingPayload.pickupLocation || 'Dubai',
         scheduledAt: bookingPayload.selectedDate && bookingPayload.selectedTimeSlot
           ? new Date(`${bookingPayload.selectedDate}T${bookingPayload.selectedTimeSlot.split('-')[0]}:00`).toISOString()
           : new Date().toISOString(),
@@ -147,6 +206,16 @@ export const clientApi = {
         needCleaningMaterials: bookingPayload.needCleaningMaterials,
         specialInstructions: bookingPayload.specialInstructions,
         internalNotes: bookingPayload.specialInstructions || '',
+        quantity: bookingPayload.quantity,
+        weight: bookingPayload.weight,
+        itemType: bookingPayload.itemType,
+        pickupLocation: bookingPayload.pickupLocation,
+        dropoffLocation: bookingPayload.dropoffLocation,
+        vehicleType: bookingPayload.vehicleType,
+        driver: bookingPayload.driver,
+        propertyType: bookingPayload.propertyType,
+        bedrooms: bookingPayload.bedrooms,
+        bathrooms: bookingPayload.bathrooms,
       };
 
       const res = await fetchApi(`${API_BASE}/bookings`, {

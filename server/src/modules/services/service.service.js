@@ -6,6 +6,50 @@ import { ApiError } from '../../utils/ApiError.js';
 import { getPaginationOptions, getPaginationMeta } from '../../utils/pagination.js';
 import { processAndSaveImage } from '../../utils/imageProcessor.js';
 
+export function getDefaultBookingFields(bookingType = 'CLEANING') {
+  switch (bookingType) {
+    case 'LAUNDRY':
+      return [
+        { key: 'quantity', label: 'Quantity of Bags', enabled: true, required: true, order: 1, minValue: 1, maxValue: 10 },
+        { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 2 },
+        { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 3 },
+        { key: 'address', label: 'Pickup & Delivery Address', enabled: true, required: true, order: 4 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 5 },
+      ];
+    case 'LAUNDRY_ITEM':
+      return [
+        { key: 'itemType', label: 'Item Type', enabled: true, required: true, order: 1 },
+        { key: 'quantity', label: 'Item Quantity', enabled: true, required: true, order: 2, minValue: 1, maxValue: 50 },
+        { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 3 },
+        { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 4 },
+        { key: 'address', label: 'Address', enabled: true, required: true, order: 5 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 6 },
+      ];
+    case 'DELIVERY':
+      return [
+        { key: 'pickupLocation', label: 'Pickup Location', enabled: true, required: true, order: 1 },
+        { key: 'dropoffLocation', label: 'Drop-off Location', enabled: true, required: true, order: 2 },
+        { key: 'vehicleType', label: 'Vehicle Type', enabled: true, required: true, order: 3 },
+        { key: 'driver', label: 'Driver / Resource', enabled: true, required: false, order: 4 },
+        { key: 'quantity', label: 'Item / Quantity', enabled: true, required: false, order: 5 },
+        { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 6 },
+        { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 7 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 8 },
+      ];
+    case 'CLEANING':
+    default:
+      return [
+        { key: 'duration', label: 'Duration (Hours)', enabled: true, required: true, order: 1, minValue: 1, maxValue: 8 },
+        { key: 'professionals', label: 'Professionals', enabled: true, required: true, order: 2, minValue: 1, maxValue: 5 },
+        { key: 'cleaningMaterials', label: 'Cleaning Materials', enabled: true, required: false, order: 3 },
+        { key: 'date', label: 'Date', enabled: true, required: true, order: 4 },
+        { key: 'time', label: 'Time Slot', enabled: true, required: true, order: 5 },
+        { key: 'address', label: 'Address', enabled: true, required: true, order: 6 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 7 },
+      ];
+  }
+}
+
 export class ServiceService {
   static async createService(data) {
     const slug = data.slug || data.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
@@ -27,6 +71,10 @@ export class ServiceService {
     }
 
     const serviceData = { ...data, slug };
+    if (!serviceData.bookingFields || serviceData.bookingFields.length === 0) {
+      serviceData.bookingFields = getDefaultBookingFields(serviceData.bookingType);
+    }
+
     if (imageToSave) {
       serviceData.images = [imageToSave];
     }
@@ -74,7 +122,10 @@ export class ServiceService {
     const servicesWithDetails = await Promise.all(
       services.map(async (service) => {
         const addons = await Addon.find({ service: service._id, isActive: true }).sort({ price: 1 }).lean();
-        return { ...service, addons };
+        const bookingFields = (service.bookingFields && service.bookingFields.length > 0)
+          ? service.bookingFields
+          : getDefaultBookingFields(service.bookingType);
+        return { ...service, addons, bookingFields };
       })
     );
 
@@ -94,10 +145,14 @@ export class ServiceService {
     }
 
     const addons = await Addon.find({ service: service._id, isActive: true }).sort({ price: 1 }).lean();
+    const bookingFields = (service.bookingFields && service.bookingFields.length > 0)
+      ? service.bookingFields
+      : getDefaultBookingFields(service.bookingType);
 
     return {
       ...service,
       addons,
+      bookingFields,
     };
   }
 

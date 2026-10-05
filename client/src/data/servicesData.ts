@@ -30,6 +30,19 @@ export interface ServiceCategory {
   image?: string;
 }
 
+export type BookingType = 'CLEANING' | 'LAUNDRY' | 'LAUNDRY_ITEM' | 'DELIVERY' | 'CUSTOM';
+
+export interface BookingFieldConfig {
+  key: string;
+  label?: string;
+  enabled: boolean;
+  required: boolean;
+  order: number;
+  unit?: string;
+  minValue?: number;
+  maxValue?: number;
+}
+
 export interface ServiceItem {
   id: string;
   categoryId: string;
@@ -44,6 +57,8 @@ export interface ServiceItem {
   image: string;
   iconName: string;
   features: string[];
+  bookingType?: BookingType;
+  bookingFields?: BookingFieldConfig[];
   variants: ServiceVariant[];
   addons: ServiceAddon[];
 }
