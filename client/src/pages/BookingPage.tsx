@@ -270,7 +270,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent?: number; flatAmount?: number } | null>(null);
   const [couponError, setCouponError] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'ziina' | 'applepay' | 'cash'>('ziina');
+  const [paymentMethod, setPaymentMethod] = useState<'ziina' | 'applepay' | 'cash'>('cash');
 
   const [checkoutCoupon, setCheckoutCoupon] = useState<{ code: string; discountType: string; discountValue: number } | null>(null);
 
@@ -1466,25 +1466,32 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     <h3 className="text-[#0C3352] text-base font-extrabold border-b border-slate-100 pb-2 flex items-center justify-between" style={{ fontFamily: M }}>
                       <span>3. Payment Method</span>
                     </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod('ziina')}
-                        className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer font-bold text-sm ${paymentMethod === 'ziina' ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF]' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
-                        style={{ fontFamily: M }}
-                      >
-                        <CreditCard size={24} weight={paymentMethod === 'ziina' ? 'fill' : 'regular'} />
-                        Pay by Card (Ziina)
-                      </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Cash on Delivery (Active default) */}
                       <button
                         type="button"
                         onClick={() => setPaymentMethod('cash')}
-                        className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer font-bold text-sm ${paymentMethod === 'cash' ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF]' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
+                        className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer font-bold text-sm ${paymentMethod === 'cash' ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF] ring-2 ring-[#0084FF]/20 shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
                         style={{ fontFamily: M }}
                       >
-                        <House size={24} weight={paymentMethod === 'cash' ? 'fill' : 'regular'} />
-                        Cash on Delivery
+                        <House size={24} weight={paymentMethod === 'cash' ? 'fill' : 'regular'} className="text-[#0084FF]" />
+                        <span>Cash on Delivery</span>
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                          Active Option
+                        </span>
                       </button>
+
+                      {/* Pay by Card (Ziina - Disabled for now) */}
+                      <div
+                        className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 font-bold text-sm flex flex-col items-center justify-center gap-1.5 relative opacity-70 cursor-not-allowed select-none"
+                        style={{ fontFamily: M }}
+                      >
+                        <CreditCard size={24} className="text-slate-400" />
+                        <span>Pay by Card (Ziina)</span>
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 text-center">
+                          We are currently working on this
+                        </span>
+                      </div>
                     </div>
                   </div>
 

@@ -13,14 +13,23 @@ import { getDefaultBookingFields } from '../services/service.service.js';
 
 export class BookingService {
   static async createBooking(data) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    const bookingRef = `ML-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    let session = null;
     try {
-      const bookingRef = `ML-${Math.floor(1000 + Math.random() * 9000)}`;
+      session = await mongoose.startSession();
+      session.startTransaction();
+    } catch (err) {
+      session = null;
+    }
+
+    const runOperations = async (sess) => {
+      const opts = sess ? { session: sess } : {};
 
       // Validate Service configuration fields
-      const serviceDoc = await Service.findById(data.service).session(session);
+      const serviceQuery = Service.findById(data.service);
+      if (sess) serviceQuery.session(sess);
+      const serviceDoc = await serviceQuery;
       if (!serviceDoc) {
         throw new ApiError(404, 'Service not found');
       }
@@ -68,19 +77,23 @@ export class BookingService {
       // Handle customer auto-creation/lookup
       let customerId = data.customer;
       let customerObj = null;
-      
+
       if (customerId) {
-        customerObj = await Customer.findById(customerId).session(session);
+        const query = Customer.findById(customerId);
+        if (sess) query.session(sess);
+        customerObj = await query;
       }
-      
+
       if (!customerId && data.customerPhone) {
-        customerObj = await Customer.findOne({ phone: data.customerPhone }).session(session);
+        const query = Customer.findOne({ phone: data.customerPhone });
+        if (sess) query.session(sess);
+        customerObj = await query;
         if (!customerObj) {
           const createdCustomers = await Customer.create([{
             name: data.customerName || 'Guest Customer',
             phone: data.customerPhone,
             email: data.customerEmail || undefined,
-          }], { session });
+          }], opts);
           customerObj = createdCustomers[0];
         }
         customerId = customerObj._id;
@@ -94,7 +107,7 @@ export class BookingService {
       if (data.couponCode) {
         const updateData = { $inc: { usedCount: 1 } };
         const emailToPush = data.customerEmail || (customerObj && customerObj.email ? customerObj.email : null);
-        
+
         if (emailToPush) {
           updateData.$addToSet = { usedByEmails: emailToPush.toLowerCase().trim() };
         }
@@ -102,7 +115,7 @@ export class BookingService {
         const coupon = await Coupon.findOneAndUpdate(
           { code: data.couponCode.toUpperCase(), isActive: true },
           updateData,
-          { new: true, session }
+          { new: true, ...opts }
         );
         if (!coupon) {
           throw new ApiError(400, 'Invalid or inactive coupon code');
@@ -123,30 +136,46 @@ export class BookingService {
         bookingRef,
         status: data.cleaner ? 'assigned' : 'pending_assignment',
         timeline: initialTimeline,
-      }], { session });
+      }], opts);
       const booking = createdBookings[0];
 
       // Update customer totalBookings & lastBookingAt
       await Customer.findByIdAndUpdate(customerId, {
         $inc: { totalBookings: 1 },
         lastBookingAt: new Date(),
-      }, { session });
+      }, opts);
 
       // If assigned cleaner, update cleaner activeBookingsCount
       if (data.cleaner) {
         await Cleaner.findByIdAndUpdate(data.cleaner, {
           $inc: { activeBookingsCount: 1 },
-        }, { session });
+        }, opts);
       }
 
-      await session.commitTransaction();
-      session.endSession();
+      return booking;
+    };
 
+    if (session) {
+      try {
+        const booking = await runOperations(session);
+        await session.commitTransaction();
+        session.endSession();
+        return { booking };
+      } catch (err) {
+        try {
+          await session.abortTransaction();
+          session.endSession();
+        } catch (_) {}
+
+        if (err.message && (err.message.includes('Transaction numbers are only allowed') || err.message.includes('replica set'))) {
+          const booking = await runOperations(null);
+          return { booking };
+        }
+        throw err;
+      }
+    } else {
+      const booking = await runOperations(null);
       return { booking };
-    } catch (error) {
-      await session.abortTransaction();
-      session.endSession();
-      throw error;
     }
   }
 
