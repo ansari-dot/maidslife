@@ -59,7 +59,7 @@ const serviceSchema = new mongoose.Schema(
     },
     startingPrice: {
       type: Number,
-      required: [true, 'Starting price is required'],
+      default: 0,
     },
     extraProfessionalPrice: {
       type: Number,

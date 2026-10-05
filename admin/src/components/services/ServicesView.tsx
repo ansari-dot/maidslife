@@ -372,7 +372,7 @@ export const ServicesView: React.FC = () => {
 
                     {/* Starting Price */}
                     <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
-                      AED {srv.startingPrice}
+                      {srv.startingPrice > 0 ? `AED ${srv.startingPrice}` : <span className="text-slate-400 font-medium">Variant Pricing</span>}
                     </td>
 
 
@@ -498,14 +498,14 @@ export const ServicesView: React.FC = () => {
             {/* Starting Price */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Starting Price (AED) *
+                Starting Price (AED) <span className="text-slate-400 font-normal">(Optional)</span>
               </label>
               <input
                 type="number"
                 min={0}
-                value={startingPrice}
-                onChange={(e) => setStartingPrice(Number(e.target.value))}
-                required
+                value={startingPrice === 0 ? '' : startingPrice}
+                onChange={(e) => setStartingPrice(e.target.value === '' ? 0 : Number(e.target.value))}
+                placeholder="0 (Optional if variants exist)"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
               />
             </div>

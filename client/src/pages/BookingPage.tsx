@@ -616,12 +616,16 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                               </div>
                               <div className="flex items-center justify-between mt-3">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-normal text-slate-500 line-through text-xs" style={{ fontFamily: M }}>
-                                    {s.startingPrice > 0 ? `AED ${s.startingPrice + 30}` : ''}
-                                  </span>
-                                  <span className="font-extrabold text-[#0C3352] text-[15px]" style={{ fontFamily: M }}>
-                                    AED {s.startingPrice}
-                                  </span>
+                                  {(s.startingPrice || 0) > 0 && (
+                                    <>
+                                      <span className="font-normal text-slate-500 line-through text-xs" style={{ fontFamily: M }}>
+                                        AED {s.startingPrice + 30}
+                                      </span>
+                                      <span className="font-extrabold text-[#0C3352] text-[15px]" style={{ fontFamily: M }}>
+                                        AED {s.startingPrice}
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
                                 <div className={`px-5 py-1.5 rounded-full text-[13px] font-extrabold transition-all shadow-sm ${isSelected
                                     ? 'bg-[#0C3352] text-white'

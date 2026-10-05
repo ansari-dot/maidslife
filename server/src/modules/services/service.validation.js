@@ -18,7 +18,7 @@ export const createServiceSchema = z.object({
     slug: z.string().optional(),
     tagline: z.string().optional(),
     description: z.string().optional(),
-    startingPrice: z.number().min(0, 'Price cannot be negative'),
+    startingPrice: z.number().min(0, 'Price cannot be negative').optional().default(0),
     extraProfessionalPrice: z.number().min(0, 'Extra professional price cannot be negative').optional(),
     icon: z.string().optional(),
     image: z.string().optional(),
