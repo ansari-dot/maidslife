@@ -87,6 +87,14 @@ function normalizeItem<T extends any>(item: T): T {
     normalized.customerEmail = (item as any).customer?.email || (item as any).customerEmail || '';
     normalized.serviceName = (item as any).service?.name || (item as any).serviceName || 'Unknown Service';
     normalized.totalAmount = (item as any).amount !== undefined ? (item as any).amount : (item as any).totalAmount || 0;
+    normalized.addressDetails = (item as any).address || (item as any).addressDetails || '';
+    normalized.variants = (item as any).variants || [];
+    normalized.variantName = (item as any).variantName || '';
+    normalized.hours = (item as any).hours;
+    normalized.professionalsCount = (item as any).professionalsCount;
+    normalized.frequency = (item as any).frequency;
+    normalized.needCleaningMaterials = (item as any).needCleaningMaterials;
+    normalized.specialInstructions = (item as any).specialInstructions;
     
     if ((item as any).scheduledAt) {
       const d = new Date((item as any).scheduledAt);

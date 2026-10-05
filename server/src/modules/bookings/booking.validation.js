@@ -11,6 +11,18 @@ export const createBookingSchema = z.object({
     addons: z.array(z.string()).optional(),
     variantId: z.string().optional(),
     variantName: z.string().optional(),
+    variants: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          variantId: z.string().optional(),
+          name: z.string().optional(),
+          quantity: z.number().optional(),
+          price: z.number().optional(),
+        })
+      )
+      .optional(),
+    frequency: z.string().optional(),
     cleaner: z.string().optional(),
     area: z.string().optional(),
     address: z.string().optional(),

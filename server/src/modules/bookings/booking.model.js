@@ -52,6 +52,30 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    variants: [
+      {
+        variantId: {
+          type: mongoose.Schema.Types.ObjectId,
+          sparse: true,
+        },
+        name: {
+          type: String,
+          default: '',
+        },
+        quantity: {
+          type: Number,
+          default: 1,
+        },
+        price: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
+    frequency: {
+      type: String,
+      default: '',
+    },
     cleaner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Cleaner',

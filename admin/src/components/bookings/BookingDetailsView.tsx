@@ -234,19 +234,50 @@ export const BookingDetailsView: React.FC = () => {
               <Sparkles className="w-4 h-4 text-sky-600" />
               <p className="font-bold text-slate-900 text-sm">{booking.serviceName}</p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">{booking.variantName}</p>
-            {booking.addonNames && booking.addonNames.length > 0 && (
-              <p className="text-[11px] text-sky-600 font-medium mt-1">
-                + {booking.addonNames.join(', ')}
-              </p>
-            )}
-            {booking.needCleaningMaterials && (
-              <p className="text-[11px] text-sky-600 font-medium mt-1">
-                + Cleaning Materials Requested
-              </p>
-            )}
+
+            {booking.variants && booking.variants.length > 0 ? (
+              <div className="mt-2 space-y-1 py-1.5 border-y border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Selected Variant(s):</span>
+                {booking.variants.map((v, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700">• {v.name}</span>
+                    <span className="font-bold text-sky-600">x{v.quantity} {v.price > 0 ? `(AED ${v.price * v.quantity})` : ''}</span>
+                  </div>
+                ))}
+              </div>
+            ) : booking.variantName ? (
+              <p className="text-xs text-slate-500 mt-1 font-medium">{booking.variantName}</p>
+            ) : null}
+
+            <div className="space-y-1 mt-2 text-[11px]">
+              {booking.frequency && (
+                <p className="text-slate-600 font-medium">
+                  <span className="text-slate-400 font-normal">Frequency:</span> <strong className="text-slate-800">{booking.frequency}</strong>
+                </p>
+              )}
+              {booking.hours && (
+                <p className="text-slate-600 font-medium">
+                  <span className="text-slate-400 font-normal">Duration:</span> <strong className="text-slate-800">{booking.hours} Hours</strong>
+                </p>
+              )}
+              {booking.professionalsCount && (
+                <p className="text-slate-600 font-medium">
+                  <span className="text-slate-400 font-normal">Staff:</span> <strong className="text-slate-800">{booking.professionalsCount} Professional(s)</strong>
+                </p>
+              )}
+              {booking.addonNames && booking.addonNames.length > 0 && (
+                <p className="text-sky-600 font-medium">
+                  + {booking.addonNames.join(', ')}
+                </p>
+              )}
+              {booking.needCleaningMaterials && (
+                <p className="text-sky-600 font-medium">
+                  + Cleaning Materials Requested
+                </p>
+              )}
+            </div>
           </div>
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between mt-3">
             <span className="text-xs text-slate-400">Total Price</span>
             <span className="font-extrabold text-slate-900 text-base">
               AED {booking.totalAmount}

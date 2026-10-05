@@ -192,6 +192,7 @@ export const clientApi = {
         service: bookingPayload.service,
         variantId: bookingPayload.variantId,
         variantName: bookingPayload.variantName,
+        variants: bookingPayload.variantQuantities,
         addons: bookingPayload.addons,
         area: bookingPayload.area || 'Dubai',
         address: bookingPayload.addressDetails || bookingPayload.pickupLocation || 'Dubai',

@@ -85,6 +85,16 @@ export interface BookingDetails {
   serviceName: string;
   variantId?: string;
   variantName?: string;
+  variants?: {
+    variantId?: string;
+    id?: string;
+    name: string;
+    quantity: number;
+    price: number;
+  }[];
+  hours?: number;
+  professionalsCount?: number;
+  frequency?: string;
   addonIds: string[];
   addonNames?: string[];
   cleanerId: string | null;

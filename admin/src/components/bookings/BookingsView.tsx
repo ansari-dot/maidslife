@@ -248,7 +248,11 @@ export const BookingsView: React.FC = () => {
                   {/* Service */}
                   <td className="py-3 px-4">
                     <p className="text-slate-800 font-semibold">{b.serviceName}</p>
-                    <p className="text-[11px] text-slate-400 truncate max-w-xs">{b.variantName}</p>
+                    <p className="text-[11px] text-slate-400 truncate max-w-xs">
+                      {b.variants && b.variants.length > 0
+                        ? b.variants.map((v) => `${v.name} (x${v.quantity})`).join(', ')
+                        : b.variantName}
+                    </p>
                   </td>
 
                   <td className="py-3 px-4 whitespace-nowrap">

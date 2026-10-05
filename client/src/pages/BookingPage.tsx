@@ -323,7 +323,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   const hrs = isFieldEnabled('duration') ? (hours || 1) : 1;
   const proCount = isFieldEnabled('professionals') ? professionalsCount : 1;
 
-  const baseServicePrice = (selectedService?.startingPrice || 0) * qty * hrs;
+  const hasVariants = Boolean(selectedService?.variants && selectedService.variants.length > 0);
+  const baseServicePrice = hasVariants ? 0 : (selectedService?.startingPrice || 0) * qty * hrs;
 
   const extraProPrice = (isFieldEnabled('professionals') && selectedService?.extraProfessionalPrice)
     ? (proCount - 1) * selectedService.extraProfessionalPrice * hrs
@@ -681,7 +682,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                   </span>
                                   {v.price > 0 ? (
                                     <span className="text-[11px] font-bold text-[#0084FF] block mt-0.5" style={{ fontFamily: M }}>
-                                      +AED {v.price} / pc
+                                      AED {v.price} / pc
                                     </span>
                                   ) : (
                                     <span className="text-[11px] font-semibold text-slate-400 block mt-0.5" style={{ fontFamily: M }}>

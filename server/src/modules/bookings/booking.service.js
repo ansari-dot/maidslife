@@ -42,7 +42,7 @@ export class BookingService {
         if (field.enabled && field.required) {
           let value;
           switch (field.key) {
-            case 'variant': value = data.variantId || data.variantName; break;
+            case 'variant': value = data.variantId || data.variantName || (data.variants && data.variants.length > 0); break;
             case 'duration': value = data.hours; break;
             case 'professionals': value = data.professionalsCount; break;
             case 'cleaningMaterials': value = data.needCleaningMaterials; break;
@@ -64,9 +64,26 @@ export class BookingService {
             case 'addons': value = true; break;
             default: break;
           }
-          if (value === undefined || value === null || value === '') {
+          if (value === undefined || value === null || value === '' || value === false) {
             throw new ApiError(400, `Field '${field.label || field.key}' is required for this service`);
           }
+        }
+      }
+
+      // Format multi-variant array and summary string if variants provided
+      let formattedVariants = [];
+      if (Array.isArray(data.variants) && data.variants.length > 0) {
+        formattedVariants = data.variants.map((v) => ({
+          variantId: v.variantId || v.id || undefined,
+          name: v.name || '',
+          quantity: v.quantity || 1,
+          price: v.price || 0,
+        }));
+        if (!data.variantName) {
+          data.variantName = formattedVariants.map((v) => `${v.name} (x${v.quantity})`).join(', ');
+        }
+        if (!data.variantId && formattedVariants[0]?.variantId) {
+          data.variantId = formattedVariants[0].variantId;
         }
       }
 
@@ -132,6 +149,7 @@ export class BookingService {
 
       const createdBookings = await Booking.create([{
         ...data,
+        variants: formattedVariants.length > 0 ? formattedVariants : data.variants,
         customer: customerId,
         bookingRef,
         status: data.cleaner ? 'assigned' : 'pending_assignment',
