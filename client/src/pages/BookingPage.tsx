@@ -59,8 +59,11 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
 
-  // Selected Variants state
+  // Selected Variants state & quantity mapping per variant
   const [selectedVariantIds, setSelectedVariantIds] = useState<string[]>(initialVariantId ? [initialVariantId] : []);
+  const [variantQuantities, setVariantQuantities] = useState<{ [variantId: string]: number }>(
+    initialVariantId ? { [initialVariantId]: 1 } : {}
+  );
 
   // Selected Add-ons state
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>(initialAddonIds);
@@ -138,10 +141,12 @@ export const BookingPage: React.FC<BookingPageProps> = ({
           setSelectedCategory(match.categoryId);
           if (match.variants && match.variants.length > 0) {
             let vMatch = match.variants.find(v => v.id === initialVariantId);
-            if (vMatch) setSelectedVariantIds([vMatch.id]);
-            else setSelectedVariantIds([match.variants[0].id]);
+            const targetId = vMatch ? (vMatch.id || (vMatch as any)._id) : (match.variants[0].id || (match.variants[0] as any)._id);
+            setSelectedVariantIds([targetId]);
+            setVariantQuantities({ [targetId]: 1 });
           } else {
             setSelectedVariantIds([]);
+            setVariantQuantities({});
           }
         }
         setIsLoading(false);
@@ -164,7 +169,12 @@ export const BookingPage: React.FC<BookingPageProps> = ({
       const s = servicesForCat[0];
       setSelectedService(s);
       if (s.variants && s.variants.length > 0) {
-        setSelectedVariantIds([s.variants[0].id]);
+        const targetId = s.variants[0].id || (s.variants[0] as any)._id;
+        setSelectedVariantIds([targetId]);
+        setVariantQuantities({ [targetId]: 1 });
+      } else {
+        setSelectedVariantIds([]);
+        setVariantQuantities({});
       }
       setSelectedAddonIds([]);
     }
@@ -175,9 +185,12 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     if (s) {
       setSelectedService(s);
       if (s.variants && s.variants.length > 0) {
-        setSelectedVariantIds([s.variants[0].id]);
+        const targetId = s.variants[0].id || (s.variants[0] as any)._id;
+        setSelectedVariantIds([targetId]);
+        setVariantQuantities({ [targetId]: 1 });
       } else {
         setSelectedVariantIds([]);
+        setVariantQuantities({});
       }
       setSelectedAddonIds([]);
     }
@@ -287,9 +300,11 @@ export const BookingPage: React.FC<BookingPageProps> = ({
 
   // PRICE CALCULATIONS
   const variantsPrice = selectedService?.variants
-    ? selectedService.variants
-      .filter((v) => selectedVariantIds.includes(v.id || (v as any)._id))
-      .reduce((sum, v) => sum + (v.price || 0), 0)
+    ? selectedService.variants.reduce((sum, v) => {
+        const vId = v.id || (v as any)._id;
+        const q = variantQuantities[vId] || 0;
+        return sum + (v.price || 0) * q;
+      }, 0)
     : 0;
 
   const addonsPrice = selectedService?.addons
@@ -361,12 +376,24 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     e.preventDefault();
     setIsSubmitting(true);
 
-    const selectedVariant = selectedService?.variants?.find((v) => selectedVariantIds.includes(v.id || (v as any)._id));
+    const selectedVariantsList = selectedService?.variants
+      ? selectedService.variants
+          .filter((v) => (variantQuantities[v.id || (v as any)._id] || 0) > 0)
+          .map((v) => ({
+            id: v.id || (v as any)._id,
+            name: v.name,
+            quantity: variantQuantities[v.id || (v as any)._id] || 0,
+            price: v.price,
+          }))
+      : [];
+
+    const variantNameStr = selectedVariantsList.map((v) => `${v.name} (x${v.quantity})`).join(', ');
 
     const bookingPayload = {
       service: selectedService?.id,
-      variantId: selectedVariantIds[0] || null,
-      variantName: selectedVariant?.name || '',
+      variantId: selectedVariantsList[0]?.id || null,
+      variantName: variantNameStr || '',
+      variantQuantities: selectedVariantsList,
       addons: selectedAddonIds,
       category: selectedCategory,
       customerName,
@@ -610,41 +637,99 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                   </div>
 
                   {/* 2.5 VARIANT SELECTOR */}
+                  {/* 2.5 VARIANT SELECTOR WITH INDIVIDUAL QUANTITY COUNTERS */}
                   {(selectedService?.variants?.length || 0) > 0 && (
                     <div>
-                      <label className="block text-xs font-extrabold text-[#0084FF] uppercase tracking-wider mb-2" style={{ fontFamily: M }}>
-                        Select Service Option / Variant *
-                      </label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-xs font-extrabold text-[#0084FF] uppercase tracking-wider" style={{ fontFamily: M }}>
+                          Select Service Options / Variants
+                        </label>
+                        {Object.values(variantQuantities).reduce((a, b) => a + b, 0) > 0 && (
+                          <span className="text-xs font-bold text-[#0084FF] bg-[#E8F3FF] px-2.5 py-0.5 rounded-full" style={{ fontFamily: M }}>
+                            {Object.values(variantQuantities).reduce((a, b) => a + b, 0)} Items Selected
+                          </span>
+                        )}
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {selectedService?.variants?.filter(v => v.isActive !== false).map((v) => {
                           const vId = v.id || (v as any)._id;
-                          const isSelected = selectedVariantIds.includes(vId);
+                          const qty = variantQuantities[vId] || 0;
+                          const isSelected = qty > 0;
+
                           return (
-                            <button
+                            <div
                               key={vId}
-                              type="button"
-                              onClick={() => setSelectedVariantIds([vId])}
-                              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col items-start gap-1 ${isSelected
-                                ? 'bg-[#E8F3FF] border-[#0084FF] shadow-xs ring-1 ring-[#0084FF]'
-                                : 'bg-white border-slate-200 hover:border-slate-300'
-                                }`}
+                              onClick={() => {
+                                setVariantQuantities((prev) => ({
+                                  ...prev,
+                                  [vId]: (prev[vId] || 0) > 0 ? 0 : 1,
+                                }));
+                              }}
+                              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                                isSelected
+                                  ? 'bg-[#E8F3FF] border-[#0084FF] shadow-xs ring-1 ring-[#0084FF]'
+                                  : 'bg-white border-slate-200 hover:border-slate-300'
+                              }`}
                             >
                               <div className="flex items-center gap-3 w-full">
                                 {v.image && (
-                                  <img src={v.image} alt={v.name} className="w-12 h-12 rounded-lg object-cover bg-slate-100" />
+                                  <img src={v.image} alt={v.name} className="w-12 h-12 rounded-lg object-cover bg-slate-100 shrink-0" />
                                 )}
-                                <div>
-                                  <span className="font-extrabold text-xs text-[#0C3352] w-full break-words" style={{ fontFamily: M }}>
+                                <div className="min-w-0 flex-1">
+                                  <span className="font-extrabold text-xs text-[#0C3352] block truncate" style={{ fontFamily: M }}>
                                     {v.name}
                                   </span>
-                                  {v.price > 0 && (
+                                  {v.price > 0 ? (
                                     <span className="text-[11px] font-bold text-[#0084FF] block mt-0.5" style={{ fontFamily: M }}>
-                                      +AED {v.price}
+                                      +AED {v.price} / pc
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] font-semibold text-slate-400 block mt-0.5" style={{ fontFamily: M }}>
+                                      Included
                                     </span>
                                   )}
                                 </div>
                               </div>
-                            </button>
+
+                              {/* INDIVIDUAL VARIANT QUANTITY COUNTER */}
+                              <div
+                                className="flex items-center justify-between pt-2 border-t border-slate-200/60"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <span className="text-[11px] font-bold text-slate-500" style={{ fontFamily: M }}>
+                                  {qty > 0 ? `${qty} Selected` : 'Quantity'}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setVariantQuantities((prev) => ({
+                                        ...prev,
+                                        [vId]: Math.max(0, (prev[vId] || 0) - 1),
+                                      }));
+                                    }}
+                                    className="w-7 h-7 rounded-lg border border-slate-200 bg-white flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="text-xs font-black text-[#0C3352] w-5 text-center" style={{ fontFamily: M }}>
+                                    {qty}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setVariantQuantities((prev) => ({
+                                        ...prev,
+                                        [vId]: (prev[vId] || 0) + 1,
+                                      }));
+                                    }}
+                                    className="w-7 h-7 rounded-lg bg-[#0084FF] text-white flex items-center justify-center font-bold hover:brightness-110 transition cursor-pointer"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           );
                         })}
                       </div>
@@ -903,8 +988,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                       </div>
                     )}
 
-                    {/* Quantity Counter */}
-                    {isFieldEnabled('quantity') && (
+                    {/* Quantity Counter (Only shown if service has NO variants) */}
+                    {isFieldEnabled('quantity') && !(selectedService?.variants && selectedService.variants.length > 0) && (
                       <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                         <div>
                           <label className="block text-[#0C3352] text-[16px] font-extrabold m-0 mb-0.5" style={{ fontFamily: M }}>
@@ -1174,45 +1259,44 @@ export const BookingPage: React.FC<BookingPageProps> = ({
               {step === 2 && (
                 <div className="space-y-6">
 
-                  {(isFieldEnabled('professionals') || isFieldEnabled('driver')) && (
-                    <div>
-                      <h3 className="text-[#0C3352] text-sm font-extrabold mb-3" style={{ fontFamily: M }}>
-                        {getFieldLabel('driver', getFieldLabel('professionals', 'Which professional do you prefer?'))}
-                      </h3>
-                      <div className="flex gap-4 overflow-x-auto pb-4 snap-x pt-2 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
-                        {cleanersList.map((cl) => {
-                          const isSelected = selectedCleaner === cl.name;
-                          return (
-                            <div
-                              key={cl.id}
-                              onClick={() => setSelectedCleaner(cl.name)}
-                              className={`snap-start shrink-0 cursor-pointer rounded-2xl border p-4 text-center flex flex-col items-center transition-all w-32 ${isSelected
-                                ? 'border-[#0084FF] bg-[#E8F3FF] shadow-md ring-2 ring-[#0084FF] ring-offset-1'
-                                : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
-                                }`}
-                            >
-                              <img
-                                src={cl.image || cl.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(cl.name)}&background=random&color=fff&size=128`}
-                                alt={cl.name}
-                                className={`w-16 h-16 rounded-full object-cover mb-3 shadow-sm ${isSelected ? 'ring-2 ring-[#0084FF]' : 'ring-1 ring-slate-200'}`}
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cl.name)}&background=random&color=fff&size=128`;
-                                }}
-                              />
-                              <h4 className={`font-bold text-xs ${isSelected ? 'text-[#0084FF]' : 'text-slate-700'}`} style={{ fontFamily: M }}>
-                                {cl.name}
-                              </h4>
-                              {cl.rating && (
-                                <p className="text-[10px] text-amber-500 font-bold mt-1" style={{ fontFamily: M }}>
-                                  {cl.rating}
-                                </p>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                  {/* CHOOSE PROFESSIONAL */}
+                  <div>
+                    <h3 className="text-[#0C3352] text-sm font-extrabold mb-3" style={{ fontFamily: M }}>
+                      Which professional do you prefer?
+                    </h3>
+                    <div className="flex gap-4 overflow-x-auto pb-4 snap-x pt-2 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+                      {cleanersList.map((cl) => {
+                        const isSelected = selectedCleaner === cl.name;
+                        return (
+                          <div
+                            key={cl.id}
+                            onClick={() => setSelectedCleaner(cl.name)}
+                            className={`snap-start shrink-0 cursor-pointer rounded-2xl border p-4 text-center flex flex-col items-center transition-all w-32 ${isSelected
+                              ? 'border-[#0084FF] bg-[#E8F3FF] shadow-md ring-2 ring-[#0084FF] ring-offset-1'
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                              }`}
+                          >
+                            <img
+                              src={cl.image || cl.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(cl.name)}&background=random&color=fff&size=128`}
+                              alt={cl.name}
+                              className={`w-16 h-16 rounded-full object-cover mb-3 shadow-sm ${isSelected ? 'ring-2 ring-[#0084FF]' : 'ring-1 ring-slate-200'}`}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(cl.name)}&background=random&color=fff&size=128`;
+                              }}
+                            />
+                            <h4 className={`font-bold text-xs ${isSelected ? 'text-[#0084FF]' : 'text-slate-700'}`} style={{ fontFamily: M }}>
+                              {cl.name}
+                            </h4>
+                            {cl.rating && (
+                              <p className="text-[10px] text-amber-500 font-bold mt-1" style={{ fontFamily: M }}>
+                                {cl.rating}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
 
                   <div>
                     <h3 className="text-[#0C3352] text-sm font-extrabold mb-3" style={{ fontFamily: M }}>
@@ -1241,40 +1325,14 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="mb-3">
                       <h3 className="text-[#0C3352] text-sm font-extrabold" style={{ fontFamily: M }}>
                         What time would you like us to start?
                       </h3>
-                      <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200" style={{ fontFamily: M }}>
-                        ⚡ Free Cancellation up to 2h before
-                      </span>
-                    </div>
-
-                    {/* TIME FILTER CATEGORY TABS */}
-                    <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
-                      {[
-                        { id: 'All', label: 'All Slots' },
-                        { id: 'Morning', label: '🌅 Morning (08:00-12:00)' },
-                        { id: 'Afternoon', label: '☀️ Afternoon (12:00-16:00)' },
-                        { id: 'Evening', label: '🌙 Evening (16:00-20:00)' },
-                      ].map((tf) => (
-                        <button
-                          key={tf.id}
-                          type="button"
-                          onClick={() => setTimeFilter(tf.id as any)}
-                          className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer border whitespace-nowrap ${timeFilter === tf.id
-                              ? 'bg-[#0C3352] text-white border-[#0C3352]'
-                              : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                            }`}
-                          style={{ fontFamily: M }}
-                        >
-                          {tf.label}
-                        </button>
-                      ))}
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      {filteredTimeSlots.map((slot, idx) => {
+                      {timeSlots.map((slot, idx) => {
                         let isBusy = false;
                         if (selectedCleaner === 'Auto Assign') {
                           const actualCleaners = cleanersList.filter((c: any) => c.id !== 'auto');
@@ -1533,12 +1591,23 @@ export const BookingPage: React.FC<BookingPageProps> = ({
 
 
 
-                  {isFieldEnabled('variant') && selectedVariantIds.length > 0 && selectedService?.variants && (
-                    <div className="flex justify-between items-center text-slate-500">
-                      <span>Option</span>
-                      <span className="font-bold text-[#0C3352]">
-                        {selectedService.variants.find(v => (v.id || (v as any)._id) === selectedVariantIds[0])?.name}
-                      </span>
+                  {selectedService?.variants && Object.entries(variantQuantities).some(([_, q]) => q > 0) && (
+                    <div className="space-y-1 py-1 border-y border-slate-100/80">
+                      <span className="text-slate-500 font-bold block">Selected Option(s):</span>
+                      {selectedService.variants
+                        .filter((v) => (variantQuantities[v.id || (v as any)._id] || 0) > 0)
+                        .map((v) => {
+                          const vId = v.id || (v as any)._id;
+                          const q = variantQuantities[vId];
+                          return (
+                            <div key={vId} className="flex justify-between items-center text-[#0C3352] font-extrabold pl-1">
+                              <span>• {v.name}</span>
+                              <span className="text-[#0084FF] font-black">
+                                x{q} {v.price > 0 ? `(+AED ${v.price * q})` : ''}
+                              </span>
+                            </div>
+                          );
+                        })}
                     </div>
                   )}
 
