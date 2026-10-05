@@ -23,7 +23,7 @@ import {
   Star,
 } from '@phosphor-icons/react';
 import { ServiceCategory, ServiceItem, ServiceVariant, ServiceAddon } from '../data/servicesData';
-import { clientApi } from '../services/api';
+import { clientApi, getDefaultBookingFields } from '../services/api';
 
 const M = "'Manrope', sans-serif";
 
@@ -105,11 +105,13 @@ export const BookingPage: React.FC<BookingPageProps> = ({
 
   // Helper to check if a booking field is enabled for the currently selected service
   const isFieldEnabled = (fieldKey: string): boolean => {
-    if (!selectedService) return true;
-    const fields = selectedService.bookingFields;
-    if (!fields || fields.length === 0) return true;
-    const field = fields.find((f: any) => f.key === fieldKey);
-    return field ? field.enabled !== false : false;
+    if (!selectedService) return false;
+    let fields = selectedService.bookingFields;
+    if (!fields || fields.length === 0) {
+      fields = getDefaultBookingFields(selectedService.bookingType || 'CLEANING');
+    }
+    const field = fields?.find((f: any) => f.key === fieldKey);
+    return field ? field.enabled === true : false;
   };
 
   const getFieldLabel = (fieldKey: string, defaultLabel: string): string => {
@@ -227,7 +229,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     const fetchAvailable = async () => {
       const targetDate = daysList.find((d) => d.full === selectedDate)?.isoDate;
       if (!targetDate) return;
-      
+
       const clns = await clientApi.getAvailableCleaners({ date: targetDate });
       setCleanersList([
         { id: 'auto', name: 'Auto Assign', rating: '★ 4.9', desc: "We'll assign the top-rated professional", busySlots: [] },
@@ -269,7 +271,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent?: number; flatAmount?: number } | null>(null);
   const [couponError, setCouponError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'ziina' | 'applepay' | 'cash'>('ziina');
-  
+
   const [checkoutCoupon, setCheckoutCoupon] = useState<{ code: string; discountType: string; discountValue: number } | null>(null);
 
   useEffect(() => {
@@ -313,11 +315,11 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     : (proCount > 1 ? (baseServicePrice + addonsPrice) * (proCount - 1) : 0);
 
   const materialsPrice = (isFieldEnabled('cleaningMaterials') && needCleaningMaterials) ? 10 * hrs : 0;
-    
+
   const subtotalBeforeFreq = baseServicePrice + addonsPrice + extraProPrice + variantsPrice + materialsPrice + garmentPrice + expressFee;
 
   // Frequency Discount (Justlife style: 20% off for Weekly, 10% off for Bi-Weekly)
-  const frequencyDiscountPercent = isFieldEnabled('duration') ? (frequency === 'Weekly' ? 20 : frequency === 'Bi-Weekly' ? 10 : 0) : 0;
+  const frequencyDiscountPercent = isFieldEnabled('frequency') ? (frequency === 'Weekly' ? 20 : frequency === 'Bi-Weekly' ? 10 : 0) : 0;
   const frequencySavings = (subtotalBeforeFreq * frequencyDiscountPercent) / 100;
   const basePrice = Math.max(0, subtotalBeforeFreq - frequencySavings);
 
@@ -335,7 +337,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
       setCouponError('Please enter a coupon code.');
       return;
     }
-    
+
     if (!customerEmail.trim()) {
       setCouponError('Please enter your email above first to apply a promo code.');
       return;
@@ -380,6 +382,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
       hours: isFieldEnabled('duration') ? hours : undefined,
       professionalsCount: isFieldEnabled('professionals') ? professionalsCount : undefined,
       needCleaningMaterials: isFieldEnabled('cleaningMaterials') ? needCleaningMaterials : undefined,
+      frequency: isFieldEnabled('frequency') ? frequency : undefined,
       specialInstructions: isFieldEnabled('specialInstructions') ? specialInstructions : undefined,
       quantity: isFieldEnabled('quantity') ? quantity : undefined,
       weight: isFieldEnabled('weight') ? weight : undefined,
@@ -395,7 +398,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
 
     try {
       const res = await clientApi.createBooking(bookingPayload);
-      
+
       const bookingId = res.booking?.id || res.booking?._id || res.data?.id || res.data?._id;
 
       if (!bookingId) {
@@ -487,7 +490,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
               Category &amp; Service Customization
             </h1>
             <p className="text-[#5A6E7F] text-xs mt-1" style={{ fontFamily: M }}>
-              Customize your booking options, frequency &amp; addons like Justlife
+              Customize your booking options &amp; addons
             </p>
           </div>
         )}
@@ -526,8 +529,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             key={cat.id}
                             type="button"
                             onClick={() => handleCategoryChange(cat.id)}
-                            className={`shrink-0 w-24 rounded-[14px] border-2 transition-all flex flex-col items-center cursor-pointer p-1 snap-start ${
-                              isSelected
+                            className={`shrink-0 w-24 rounded-[14px] border-2 transition-all flex flex-col items-center cursor-pointer p-1 snap-start ${isSelected
                                 ? 'border-[#00D1FF] bg-white shadow-sm ring-2 ring-[#00D1FF]/20'
                                 : 'border-transparent bg-white hover:bg-slate-50'
                               }`}
@@ -563,8 +565,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             type="button"
                             onClick={() => handleServiceChange(s.id)}
                             className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-4 ${isSelected
-                                ? 'bg-[#F2FBFF] border-[#00D1FF] shadow-sm ring-1 ring-[#00D1FF]'
-                                : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                              ? 'bg-[#F2FBFF] border-[#00D1FF] shadow-sm ring-1 ring-[#00D1FF]'
+                              : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
                               }`}
                           >
                             <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-xl overflow-hidden bg-[#F8F9FA] flex items-center justify-center">
@@ -574,7 +576,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                 <span className="text-slate-300 text-xs font-bold">No image</span>
                               )}
                             </div>
-                            
+
                             <div className="flex-1 flex flex-col justify-between h-full min-h-[5rem] sm:min-h-[6rem]">
                               <div>
                                 <h3 className="font-extrabold text-[#0C3352] text-sm sm:text-[17px] leading-tight mb-1" style={{ fontFamily: M }}>
@@ -593,11 +595,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                     AED {s.startingPrice}
                                   </span>
                                 </div>
-                                <div className={`px-5 py-1.5 rounded-full text-[13px] font-extrabold transition-all shadow-sm ${
-                                  isSelected 
-                                    ? 'bg-[#0C3352] text-white' 
+                                <div className={`px-5 py-1.5 rounded-full text-[13px] font-extrabold transition-all shadow-sm ${isSelected
+                                    ? 'bg-[#0C3352] text-white'
                                     : 'bg-[#00D1FF] text-white hover:brightness-110'
-                                }`} style={{ fontFamily: M }}>
+                                  }`} style={{ fontFamily: M }}>
                                   {isSelected ? 'Selected' : 'Add +'}
                                 </div>
                               </div>
@@ -624,8 +625,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                               type="button"
                               onClick={() => setSelectedVariantIds([vId])}
                               className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col items-start gap-1 ${isSelected
-                                  ? 'bg-[#E8F3FF] border-[#0084FF] shadow-xs ring-1 ring-[#0084FF]'
-                                  : 'bg-white border-slate-200 hover:border-slate-300'
+                                ? 'bg-[#E8F3FF] border-[#0084FF] shadow-xs ring-1 ring-[#0084FF]'
+                                : 'bg-white border-slate-200 hover:border-slate-300'
                                 }`}
                             >
                               <div className="flex items-center gap-3 w-full">
@@ -652,67 +653,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
 
                   {/* 3. DYNAMIC CONFIGURATION FIELDS */}
                   <div className="space-y-6 pt-4 border-t border-slate-100">
-                    
-                    {/* FREQUENCY DISCOUNTS (JUSTLIFE SIGNATURE BAR) */}
-                    {isFieldEnabled('duration') && (
-                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-4 border border-[#00D1FF]/30">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-xs font-extrabold text-[#0C3352] uppercase tracking-wider" style={{ fontFamily: M }}>
-                            Service Frequency
-                          </span>
-                          <span className="text-[11px] font-bold text-[#0084FF] bg-white px-2.5 py-0.5 rounded-full border border-blue-200">
-                            ⚡ Save up to 20% on recurring plans
-                          </span>
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-2">
-                          {[
-                            { id: 'One Time', label: 'One Time', badge: '' },
-                            { id: 'Weekly', label: 'Weekly', badge: 'SAVE 20%' },
-                            { id: 'Bi-Weekly', label: 'Bi-Weekly', badge: 'SAVE 10%' },
-                          ].map((plan) => {
-                            const isSelected = frequency === plan.id;
-                            return (
-                              <button
-                                key={plan.id}
-                                type="button"
-                                onClick={() => setFrequency(plan.id as any)}
-                                className={`relative py-3 px-2 rounded-xl text-center flex flex-col items-center justify-center transition-all cursor-pointer border ${
-                                  isSelected
-                                    ? 'bg-[#0084FF] border-[#0084FF] text-white shadow-md font-extrabold'
-                                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
-                                }`}
-                              >
-                                {plan.badge && (
-                                  <span className={`absolute -top-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                    isSelected ? 'bg-amber-400 text-slate-900' : 'bg-emerald-500 text-white'
-                                  }`}>
-                                    {plan.badge}
-                                  </span>
-                                )}
-                                <span className="text-xs font-bold leading-tight mt-0.5" style={{ fontFamily: M }}>{plan.label}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
 
-                        {frequency !== 'One Time' && (
-                          <div className="mt-3 pt-3 border-t border-blue-100 flex items-center justify-between text-xs">
-                            <span className="text-slate-600 font-bold" style={{ fontFamily: M }}>Preferred Regular Day:</span>
-                            <select
-                              value={recurringDay}
-                              onChange={(e) => setRecurringDay(e.target.value)}
-                              className="rounded-lg border border-blue-200 bg-white px-3 py-1 font-bold text-[#0C3352] outline-none cursor-pointer"
-                              style={{ fontFamily: M }}
-                            >
-                              {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((d) => (
-                                <option key={d} value={d}>{d}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </div>
-                    )}
+
 
                     {/* PROPERTY TYPE SELECTOR */}
                     {isFieldEnabled('propertyType') && (
@@ -732,11 +674,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                 key={prop.key}
                                 type="button"
                                 onClick={() => setPropertyType(prop.key)}
-                                className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
-                                  isSelected
+                                className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${isSelected
                                     ? 'border-[#0084FF] bg-[#E8F3FF] ring-2 ring-[#0084FF] text-[#0084FF]'
                                     : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                                }`}
+                                  }`}
                               >
                                 <span className="text-xl mb-1">{prop.icon}</span>
                                 <span className="text-xs font-extrabold" style={{ fontFamily: M }}>{prop.label}</span>
@@ -766,9 +707,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                   key={num}
                                   type="button"
                                   onClick={() => handleBedroomsChange(num)}
-                                  className={`flex-1 py-1.5 text-xs font-black rounded-lg transition-all ${
-                                    bedrooms === num ? 'bg-[#0084FF] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'
-                                  }`}
+                                  className={`flex-1 py-1.5 text-xs font-black rounded-lg transition-all ${bedrooms === num ? 'bg-[#0084FF] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'
+                                    }`}
                                 >
                                   {num === 5 ? '5+' : num}
                                 </button>
@@ -791,9 +731,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                   key={num}
                                   type="button"
                                   onClick={() => setBathrooms(num)}
-                                  className={`flex-1 py-1.5 text-xs font-black rounded-lg transition-all ${
-                                    bathrooms === num ? 'bg-[#0084FF] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'
-                                  }`}
+                                  className={`flex-1 py-1.5 text-xs font-black rounded-lg transition-all ${bathrooms === num ? 'bg-[#0084FF] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200'
+                                    }`}
                                 >
                                   {num === 4 ? '4+' : num}
                                 </button>
@@ -805,7 +744,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     )}
 
                     {/* LAUNDRY / GARMENT ITEM COUNTERS */}
-                    {(isFieldEnabled('itemType') || selectedService?.bookingType === 'LAUNDRY_ITEM' || selectedService?.id?.includes('laundry')) && (
+                    {isFieldEnabled('itemType') && (
                       <div className="bg-[#F8FAFC] rounded-2xl p-5 border border-slate-200 space-y-4">
                         <div className="flex items-center justify-between">
                           <div>
@@ -825,9 +764,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             return (
                               <div
                                 key={item.key}
-                                className={`p-3 rounded-xl border transition-all flex flex-col justify-between ${
-                                  count > 0 ? 'bg-white border-[#0084FF] shadow-sm ring-1 ring-[#0084FF]' : 'bg-white border-slate-200'
-                                }`}
+                                className={`p-3 rounded-xl border transition-all flex flex-col justify-between ${count > 0 ? 'bg-white border-[#0084FF] shadow-sm ring-1 ring-[#0084FF]' : 'bg-white border-slate-200'
+                                  }`}
                               >
                                 <div className="flex items-center gap-2 mb-2">
                                   <span className="text-xl">{item.icon}</span>
@@ -873,9 +811,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           <button
                             type="button"
                             onClick={() => setExpressDelivery(!expressDelivery)}
-                            className={`px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
-                              expressDelivery ? 'bg-amber-500 text-white shadow-sm' : 'bg-white border border-amber-300 text-amber-800'
-                            }`}
+                            className={`px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${expressDelivery ? 'bg-amber-500 text-white shadow-sm' : 'bg-white border border-amber-300 text-amber-800'
+                              }`}
                             style={{ fontFamily: M }}
                           >
                             {expressDelivery ? 'Active (+AED 25)' : 'Add +AED 25'}
@@ -895,37 +832,41 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                         </div>
 
                         <div className="relative pl-6 space-y-4 border-l-2 border-dashed border-[#0084FF]/40 ml-2 py-1">
-                          <div className="relative">
-                            <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
-                            <label className="block text-xs font-extrabold text-[#0C3352] uppercase mb-1" style={{ fontFamily: M }}>
-                              {getFieldLabel('pickupLocation', '1. Pickup Address & Contact')} *
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="e.g. Villa 12, Street 4, Al Wasl, Dubai"
-                              value={pickupLocation}
-                              onChange={(e) => setPickupLocation(e.target.value)}
-                              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-[#0C3352] outline-none focus:border-[#0084FF]"
-                              style={{ fontFamily: M }}
-                            />
-                          </div>
+                          {isFieldEnabled('pickupLocation') && (
+                            <div className="relative">
+                              <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
+                              <label className="block text-xs font-extrabold text-[#0C3352] uppercase mb-1" style={{ fontFamily: M }}>
+                                {getFieldLabel('pickupLocation', '1. Pickup Address & Contact')} *
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="e.g. Villa 12, Street 4, Al Wasl, Dubai"
+                                value={pickupLocation}
+                                onChange={(e) => setPickupLocation(e.target.value)}
+                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-[#0C3352] outline-none focus:border-[#0084FF]"
+                                style={{ fontFamily: M }}
+                              />
+                            </div>
+                          )}
 
-                          <div className="relative">
-                            <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-rose-500 ring-4 ring-rose-100" />
-                            <label className="block text-xs font-extrabold text-[#0C3352] uppercase mb-1" style={{ fontFamily: M }}>
-                              {getFieldLabel('dropoffLocation', '2. Drop-off Destination Address')} *
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="e.g. Office 402, Index Tower, DIFC, Dubai"
-                              value={dropoffLocation}
-                              onChange={(e) => setDropoffLocation(e.target.value)}
-                              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-[#0C3352] outline-none focus:border-[#0084FF]"
-                              style={{ fontFamily: M }}
-                            />
-                          </div>
+                          {isFieldEnabled('dropoffLocation') && (
+                            <div className="relative">
+                              <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-rose-500 ring-4 ring-rose-100" />
+                              <label className="block text-xs font-extrabold text-[#0C3352] uppercase mb-1" style={{ fontFamily: M }}>
+                                {getFieldLabel('dropoffLocation', '2. Drop-off Destination Address')} *
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="e.g. Office 402, Index Tower, DIFC, Dubai"
+                                value={dropoffLocation}
+                                onChange={(e) => setDropoffLocation(e.target.value)}
+                                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-[#0C3352] outline-none focus:border-[#0084FF]"
+                                style={{ fontFamily: M }}
+                              />
+                            </div>
+                          )}
                         </div>
 
                         {isFieldEnabled('vehicleType') && (
@@ -945,11 +886,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                     key={veh.id}
                                     type="button"
                                     onClick={() => setVehicleType(veh.id)}
-                                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center ${
-                                      isSelected
+                                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center ${isSelected
                                         ? 'border-[#0084FF] bg-[#E8F3FF] ring-2 ring-[#0084FF]'
                                         : 'border-slate-200 bg-white hover:border-slate-300'
-                                    }`}
+                                      }`}
                                   >
                                     <span className="text-2xl mb-1">{veh.icon}</span>
                                     <span className="font-extrabold text-xs text-[#0C3352]" style={{ fontFamily: M }}>{veh.label}</span>
@@ -964,7 +904,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     )}
 
                     {/* Quantity Counter */}
-                    {isFieldEnabled('quantity') && !selectedService?.id?.includes('laundry') && (
+                    {isFieldEnabled('quantity') && (
                       <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                         <div>
                           <label className="block text-[#0C3352] text-[16px] font-extrabold m-0 mb-0.5" style={{ fontFamily: M }}>
@@ -973,7 +913,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           <p className="text-slate-500 text-xs" style={{ fontFamily: M }}>Specify total quantity or item count</p>
                         </div>
                         <div className="flex items-center gap-4">
-                          <button 
+                          <button
                             type="button"
                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
                             className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
@@ -981,7 +921,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             -
                           </button>
                           <span className="text-[18px] font-extrabold text-[#0C3352] w-4 text-center" style={{ fontFamily: M }}>{quantity}</span>
-                          <button 
+                          <button
                             type="button"
                             onClick={() => setQuantity(quantity + 1)}
                             className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-[#00D1FF] hover:bg-slate-50 transition-all cursor-pointer"
@@ -1022,7 +962,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           </p>
                         </div>
                         <div className="flex items-center gap-4">
-                          <button 
+                          <button
                             type="button"
                             onClick={() => setHours(Math.max(1, hours - 1))}
                             className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
@@ -1030,7 +970,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             -
                           </button>
                           <span className="text-[18px] font-extrabold text-[#0C3352] w-4 text-center" style={{ fontFamily: M }}>{hours}</span>
-                          <button 
+                          <button
                             type="button"
                             onClick={() => setHours(Math.min(8, hours + 1))}
                             className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-[#00D1FF] hover:bg-slate-50 transition-all cursor-pointer"
@@ -1051,7 +991,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           <p className="text-slate-500 text-xs" style={{ fontFamily: M }}>How many professionals do you need?</p>
                         </div>
                         <div className="flex items-center gap-4">
-                          <button 
+                          <button
                             type="button"
                             onClick={() => setProfessionalsCount(Math.max(1, professionalsCount - 1))}
                             className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
@@ -1059,7 +999,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             -
                           </button>
                           <span className="text-[18px] font-extrabold text-[#0C3352] w-4 text-center" style={{ fontFamily: M }}>{professionalsCount}</span>
-                          <button 
+                          <button
                             type="button"
                             onClick={() => setProfessionalsCount(Math.min(4, professionalsCount + 1))}
                             className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-[#00D1FF] hover:bg-slate-50 transition-all cursor-pointer"
@@ -1069,10 +1009,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Materials Toggle */}
                     {isFieldEnabled('cleaningMaterials') && (
-                      <div className="flex items-center justify-between pb-4">
+                      <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                         <div>
                           <label className="block text-[#0C3352] text-[16px] font-extrabold m-0 mb-0.5" style={{ fontFamily: M }}>
                             {getFieldLabel('cleaningMaterials', 'Cleaning Materials')}
@@ -1080,7 +1020,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           <p className="text-slate-500 text-xs" style={{ fontFamily: M }}>Do you need us to bring materials? (+AED 10/hr)</p>
                         </div>
                         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full">
-                          <button 
+                          <button
                             type="button"
                             onClick={() => setNeedCleaningMaterials(false)}
                             className={`px-5 py-1.5 rounded-full text-[13px] font-extrabold transition-all cursor-pointer ${!needCleaningMaterials ? 'bg-white shadow-sm text-[#0C3352]' : 'text-slate-500'}`}
@@ -1088,7 +1028,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           >
                             No
                           </button>
-                          <button 
+                          <button
                             type="button"
                             onClick={() => setNeedCleaningMaterials(true)}
                             className={`px-5 py-1.5 rounded-full text-[13px] font-extrabold transition-all cursor-pointer ${needCleaningMaterials ? 'bg-[#00D1FF] shadow-sm text-white' : 'text-slate-500'}`}
@@ -1097,6 +1037,84 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             Yes
                           </button>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Service Frequency (Recurring Plans) */}
+                    {isFieldEnabled('frequency') && (
+                      <div className="pb-4 border-b border-slate-100 space-y-3">
+                        <div>
+                          <label className="block text-[#0C3352] text-[16px] font-extrabold m-0 mb-0.5" style={{ fontFamily: M }}>
+                            {getFieldLabel('frequency', 'Service Frequency (Recurring Plans)')}
+                          </label>
+                          <p className="text-slate-500 text-xs" style={{ fontFamily: M }}>Choose a recurring plan to save up to 20%</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { key: 'One Time', label: 'One Time', discount: null },
+                            { key: 'Weekly', label: 'Weekly', discount: 'Save 20%' },
+                            { key: 'Bi-Weekly', label: 'Bi-Weekly', discount: 'Save 10%' },
+                          ].map((freq) => {
+                            const isSelected = frequency === freq.key;
+                            return (
+                              <button
+                                key={freq.key}
+                                type="button"
+                                onClick={() => setFrequency(freq.key as any)}
+                                className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
+                                  isSelected
+                                    ? 'border-[#0084FF] bg-[#E8F3FF] ring-2 ring-[#0084FF] text-[#0084FF]'
+                                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                                }`}
+                              >
+                                <span className="text-xs font-extrabold" style={{ fontFamily: M }}>{freq.label}</span>
+                                {freq.discount ? (
+                                  <span className="text-[10px] font-bold text-emerald-600 mt-0.5" style={{ fontFamily: M }}>{freq.discount}</span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 mt-0.5" style={{ fontFamily: M }}>Standard</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {frequency !== 'One Time' && (
+                          <div className="pt-2">
+                            <label className="block text-xs font-extrabold text-[#0C3352] uppercase mb-1.5" style={{ fontFamily: M }}>
+                              Select Preferred Day of the Week
+                            </label>
+                            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                                <button
+                                  key={day}
+                                  type="button"
+                                  onClick={() => setRecurringDay(day)}
+                                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                    recurringDay === day ? 'bg-[#0084FF] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  {day.slice(0, 3)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Special Instructions / Notes */}
+                    {isFieldEnabled('specialInstructions') && (
+                      <div className="pb-4">
+                        <label className="block text-[#0C3352] text-sm font-extrabold mb-1" style={{ fontFamily: M }}>
+                          {getFieldLabel('specialInstructions', 'Special Instructions & Notes')}
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder="e.g. Focus on kitchen cabinets, key is under the door mat..."
+                          value={specialInstructions}
+                          onChange={(e) => setSpecialInstructions(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 bg-[#F8FAFC] px-4 py-2.5 text-xs text-[#0C3352] outline-none focus:border-[#0084FF] focus:bg-white resize-none"
+                          style={{ fontFamily: M }}
+                        />
                       </div>
                     )}
 
@@ -1116,8 +1134,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                               key={addon.id}
                               onClick={() => toggleAddon(addon.id)}
                               className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between text-xs ${isChecked
-                                  ? 'border-[#0084FF] bg-[#E8F3FF] font-bold text-[#0066CC]'
-                                  : 'border-slate-200 bg-[#F8FAFC] text-slate-700 hover:border-slate-300'
+                                ? 'border-[#0084FF] bg-[#E8F3FF] font-bold text-[#0066CC]'
+                                : 'border-slate-200 bg-[#F8FAFC] text-slate-700 hover:border-slate-300'
                                 }`}
                               style={{ fontFamily: M }}
                             >
@@ -1169,8 +1187,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                               key={cl.id}
                               onClick={() => setSelectedCleaner(cl.name)}
                               className={`snap-start shrink-0 cursor-pointer rounded-2xl border p-4 text-center flex flex-col items-center transition-all w-32 ${isSelected
-                                  ? 'border-[#0084FF] bg-[#E8F3FF] shadow-md ring-2 ring-[#0084FF] ring-offset-1'
-                                  : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                                ? 'border-[#0084FF] bg-[#E8F3FF] shadow-md ring-2 ring-[#0084FF] ring-offset-1'
+                                : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
                                 }`}
                             >
                               <img
@@ -1210,8 +1228,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             type="button"
                             onClick={() => setSelectedDate(dateStr)}
                             className={`flex flex-col items-center justify-center h-16 w-14 shrink-0 rounded-full border transition-all cursor-pointer ${isSelected
-                                ? 'bg-[#0084FF] border-[#0084FF] text-white shadow-md'
-                                : 'bg-white border-slate-200 text-[#0C3352] hover:border-slate-300'
+                              ? 'bg-[#0084FF] border-[#0084FF] text-white shadow-md'
+                              : 'bg-white border-slate-200 text-[#0C3352] hover:border-slate-300'
                               }`}
                           >
                             <span className="text-[10px] uppercase font-bold" style={{ fontFamily: M }}>{d.day}</span>
@@ -1244,11 +1262,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           key={tf.id}
                           type="button"
                           onClick={() => setTimeFilter(tf.id as any)}
-                          className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer border whitespace-nowrap ${
-                            timeFilter === tf.id
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer border whitespace-nowrap ${timeFilter === tf.id
                               ? 'bg-[#0C3352] text-white border-[#0C3352]'
                               : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                          }`}
+                            }`}
                           style={{ fontFamily: M }}
                         >
                           {tf.label}
@@ -1278,9 +1295,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             type="button"
                             disabled={isBusy}
                             onClick={() => !isBusy && setSelectedTimeSlot(slot)}
-                            className={`py-2.5 px-3 rounded-full text-xs font-bold border transition-all ${
-                              isBusy 
-                                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60' 
+                            className={`py-2.5 px-3 rounded-full text-xs font-bold border transition-all ${isBusy
+                                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
                                 : isSelected
                                   ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF] cursor-pointer ring-2 ring-[#0084FF]'
                                   : 'border-slate-200 bg-white text-[#0C3352] hover:border-slate-300 cursor-pointer'
@@ -1409,7 +1425,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     <h3 className="text-[#0C3352] text-base font-extrabold border-b border-slate-100 pb-2 flex items-center justify-between" style={{ fontFamily: M }}>
                       <span>2. Promo Code / Coupon</span>
                     </h3>
-                    
+
                     {checkoutCoupon && !appliedCoupon && (
                       <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex items-start gap-2">
                         <Tag className="text-emerald-500 shrink-0 mt-0.5" size={16} weight="bold" />
@@ -1420,7 +1436,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                         </div>
                       </div>
                     )}
-                    
+
                     {couponError && (
                       <div className="text-red-500 text-xs font-bold" style={{ fontFamily: M }}>{couponError}</div>
                     )}
@@ -1508,12 +1524,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     <span className="font-bold text-[#0C3352]">{selectedService?.name}</span>
                   </div>
 
-                  {isFieldEnabled('duration') && (
-                    <div className="flex justify-between items-center text-slate-500">
-                      <span>Frequency</span>
-                      <span className="font-bold text-emerald-600">{frequency} {frequency !== 'One Time' ? `(${recurringDay}s)` : ''}</span>
-                    </div>
-                  )}
+
 
                   {isFieldEnabled('variant') && selectedVariantIds.length > 0 && selectedService?.variants && (
                     <div className="flex justify-between items-center text-slate-500">
@@ -1688,7 +1699,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
             <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-slate-200 text-left space-y-2 text-xs" style={{ fontFamily: M }}>
               <div className="flex justify-between"><span className="text-slate-500">Category:</span><span className="font-bold text-[#0C3352]">{categories.find((c) => c.id === selectedCategory)?.name || 'Residential Cleaning'}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Service:</span><span className="font-bold text-[#0C3352]">{selectedService?.name}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Frequency:</span><span className="font-bold text-emerald-600">{frequency}</span></div>
+
               <div className="flex justify-between"><span className="text-slate-500">Duration:</span><span className="font-bold text-[#0C3352]">{hours} Hour(s)</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Professionals:</span><span className="font-bold text-[#0C3352]">{professionalsCount}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Date &amp; Time:</span><span className="font-bold text-[#0C3352]">{selectedDate}, 2026 at {selectedTimeSlot}</span></div>

@@ -1,5 +1,16 @@
 import { z } from 'zod';
 
+const bookingFieldSchema = z.object({
+  key: z.string(),
+  label: z.string().optional(),
+  enabled: z.boolean().optional(),
+  required: z.boolean().optional(),
+  order: z.number().optional(),
+  unit: z.string().optional(),
+  minValue: z.number().optional(),
+  maxValue: z.number().optional(),
+});
+
 export const createServiceSchema = z.object({
   body: z.object({
     category: z.string().min(1, 'Category ID is required'),
@@ -13,6 +24,8 @@ export const createServiceSchema = z.object({
     image: z.string().optional(),
     features: z.array(z.string()).optional(),
     isActive: z.boolean().optional(),
+    bookingType: z.enum(['CLEANING', 'LAUNDRY', 'LAUNDRY_ITEM', 'DELIVERY', 'CUSTOM']).optional(),
+    bookingFields: z.array(bookingFieldSchema).optional(),
     variants: z.array(
       z.object({
         name: z.string().min(1, 'Variant name is required'),
@@ -40,6 +53,8 @@ export const updateServiceSchema = z.object({
     image: z.string().optional(),
     features: z.array(z.string()).optional(),
     isActive: z.boolean().optional(),
+    bookingType: z.enum(['CLEANING', 'LAUNDRY', 'LAUNDRY_ITEM', 'DELIVERY', 'CUSTOM']).optional(),
+    bookingFields: z.array(bookingFieldSchema).optional(),
     variants: z.array(
       z.object({
         name: z.string().min(1, 'Variant name is required'),

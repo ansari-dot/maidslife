@@ -56,11 +56,12 @@ export function getDefaultBookingFields(bookingType: string = 'CLEANING') {
         { key: 'duration', label: 'Duration (Hours)', enabled: true, required: true, order: 2 },
         { key: 'professionals', label: 'Professionals', enabled: true, required: true, order: 3 },
         { key: 'cleaningMaterials', label: 'Cleaning Materials', enabled: true, required: false, order: 4 },
-        { key: 'addons', label: 'Add-ons', enabled: true, required: false, order: 5 },
-        { key: 'date', label: 'Date', enabled: true, required: true, order: 6 },
-        { key: 'time', label: 'Time Slot', enabled: true, required: true, order: 7 },
-        { key: 'address', label: 'Address', enabled: true, required: true, order: 8 },
-        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 9 },
+        { key: 'frequency', label: 'Service Frequency (Recurring Plans)', enabled: true, required: false, order: 5 },
+        { key: 'addons', label: 'Add-ons', enabled: true, required: false, order: 6 },
+        { key: 'date', label: 'Date', enabled: true, required: true, order: 7 },
+        { key: 'time', label: 'Time Slot', enabled: true, required: true, order: 8 },
+        { key: 'address', label: 'Address', enabled: true, required: true, order: 9 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 10 },
       ];
   }
 }
@@ -204,6 +205,7 @@ export const clientApi = {
         hours: bookingPayload.hours,
         professionalsCount: bookingPayload.professionalsCount,
         needCleaningMaterials: bookingPayload.needCleaningMaterials,
+        frequency: bookingPayload.frequency,
         specialInstructions: bookingPayload.specialInstructions,
         internalNotes: bookingPayload.specialInstructions || '',
         quantity: bookingPayload.quantity,

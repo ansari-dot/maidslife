@@ -42,10 +42,11 @@ export function getDefaultBookingFields(bookingType = 'CLEANING') {
         { key: 'duration', label: 'Duration (Hours)', enabled: true, required: true, order: 1, minValue: 1, maxValue: 8 },
         { key: 'professionals', label: 'Professionals', enabled: true, required: true, order: 2, minValue: 1, maxValue: 5 },
         { key: 'cleaningMaterials', label: 'Cleaning Materials', enabled: true, required: false, order: 3 },
-        { key: 'date', label: 'Date', enabled: true, required: true, order: 4 },
-        { key: 'time', label: 'Time Slot', enabled: true, required: true, order: 5 },
-        { key: 'address', label: 'Address', enabled: true, required: true, order: 6 },
-        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 7 },
+        { key: 'frequency', label: 'Service Frequency (Recurring Plans)', enabled: true, required: false, order: 4 },
+        { key: 'date', label: 'Date', enabled: true, required: true, order: 5 },
+        { key: 'time', label: 'Time Slot', enabled: true, required: true, order: 6 },
+        { key: 'address', label: 'Address', enabled: true, required: true, order: 7 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 8 },
       ];
   }
 }
@@ -188,12 +189,18 @@ export class ServiceService {
     const service = await Service.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
-    }).populate('category', 'name slug');
+    }).populate('category', 'name slug').lean();
 
     if (!service) {
       throw new ApiError(404, 'Service not found');
     }
-    return service;
+
+    const addons = await Addon.find({ service: service._id, isActive: true }).sort({ price: 1 }).lean();
+    const bookingFields = (service.bookingFields && service.bookingFields.length > 0)
+      ? service.bookingFields
+      : getDefaultBookingFields(service.bookingType);
+
+    return { ...service, addons, bookingFields };
   }
 
   static async deleteService(id) {

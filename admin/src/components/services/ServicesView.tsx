@@ -23,6 +23,7 @@ const ALL_POSSIBLE_FIELDS = [
   { key: 'duration', label: 'Duration (Hours)' },
   { key: 'professionals', label: 'Professionals' },
   { key: 'cleaningMaterials', label: 'Cleaning Materials' },
+  { key: 'frequency', label: 'Service Frequency (Recurring Plans)' },
   { key: 'quantity', label: 'Quantity / Item Count' },
   { key: 'weight', label: 'Weight (KG)' },
   { key: 'itemType', label: 'Item Type' },
@@ -75,10 +76,11 @@ function getPresetFields(type: BookingType): BookingFieldConfig[] {
         { key: 'duration', label: 'Duration (Hours)', enabled: true, required: true, order: 1 },
         { key: 'professionals', label: 'Professionals', enabled: true, required: true, order: 2 },
         { key: 'cleaningMaterials', label: 'Cleaning Materials', enabled: true, required: false, order: 3 },
-        { key: 'date', label: 'Date', enabled: true, required: true, order: 4 },
-        { key: 'time', label: 'Time Slot', enabled: true, required: true, order: 5 },
-        { key: 'address', label: 'Address', enabled: true, required: true, order: 6 },
-        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 7 },
+        { key: 'frequency', label: 'Service Frequency (Recurring Plans)', enabled: true, required: false, order: 4 },
+        { key: 'date', label: 'Date', enabled: true, required: true, order: 5 },
+        { key: 'time', label: 'Time Slot', enabled: true, required: true, order: 6 },
+        { key: 'address', label: 'Address', enabled: true, required: true, order: 7 },
+        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 8 },
       ];
   }
 }

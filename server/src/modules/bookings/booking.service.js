@@ -37,6 +37,8 @@ export class BookingService {
             case 'duration': value = data.hours; break;
             case 'professionals': value = data.professionalsCount; break;
             case 'cleaningMaterials': value = data.needCleaningMaterials; break;
+            case 'frequency': value = data.frequency; break;
+            case 'specialInstructions': value = data.specialInstructions; break;
             case 'quantity': value = data.quantity; break;
             case 'weight': value = data.weight; break;
             case 'itemType': value = data.itemType; break;
