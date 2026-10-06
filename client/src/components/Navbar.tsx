@@ -8,12 +8,15 @@ import {
   CaretDown,
   MapPin,
 } from '@phosphor-icons/react';
+import { LocationData } from './LocationModal';
 
 interface NavbarProps {
   onBookClick?: () => void;
   onLoginClick?: () => void;
   onLogoutClick?: () => void;
   onMyBookingsClick?: () => void;
+  onLocationClick?: () => void;
+  selectedLocation?: LocationData | null;
   activeNav?: string;
   onNavClick?: (nav: string) => void;
   user?: { name: string; email: string; role?: string } | null;
@@ -24,6 +27,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLoginClick,
   onLogoutClick,
   onMyBookingsClick,
+  onLocationClick,
+  selectedLocation,
   activeNav = 'Home',
   onNavClick,
   user,
@@ -33,18 +38,28 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [city, setCity] = useState('Dubai, UAE');
 
   const navLinks = ['Home', 'Services', 'About', 'Careers', 'Contact'];
-  const locations = [
-    { name: 'Dubai, UAE', sub: 'We serve your area' },
-    { name: 'Abu Dhabi, UAE', sub: 'Downtown & Islands' },
-    { name: 'Sharjah, UAE', sub: 'Al Majaz, Nahda & more' },
-  ];
+
+  const displayLocationTitle = selectedLocation
+    ? (selectedLocation.area || selectedLocation.buildingName || `${selectedLocation.city}, UAE`)
+    : 'Dubai, UAE';
+
+  const displayLocationSub = selectedLocation
+    ? `${selectedLocation.city}, UAE`
+    : 'We serve your area';
 
   const handleLinkClick = (link: string) => {
     setInternalActive(link);
     onNavClick?.(link);
+  };
+
+  const handleLocationBadgeClick = () => {
+    if (onLocationClick) {
+      onLocationClick();
+    } else {
+      setLocationOpen(!locationOpen);
+    }
   };
 
   return (
@@ -85,11 +100,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* ── RIGHT ACTIONS (desktop) ── */}
         <div className="hidden sm:flex items-center gap-3 shrink-0">
 
-          {/* Location dropdown */}
+          {/* Location Badge (Triggers LocationModal) */}
           <div className="relative">
             <button
-              onClick={() => setLocationOpen(!locationOpen)}
-              className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer"
+              onClick={handleLocationBadgeClick}
+              className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer border border-transparent hover:border-slate-200"
+              title="Change Service Location"
             >
               {/* UAE flag */}
               <div className="h-7 w-7 overflow-hidden rounded-full border-2 border-white shadow-sm shrink-0">
@@ -100,58 +116,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <rect x="10" y="13.33" width="20" height="6.67" fill="#000000" />
                 </svg>
               </div>
-              <div className="text-left leading-tight">
+              <div className="text-left leading-tight max-w-[150px]">
                 <div className="flex items-center gap-1">
-                  <span className="text-[13px] font-bold text-foreground">{city}</span>
+                  <span className="text-[13px] font-bold text-foreground truncate">{displayLocationTitle}</span>
                   <CaretDown
                     size={13}
                     weight="bold"
-                    className={`text-muted transition-transform ${locationOpen ? 'rotate-180' : ''}`}
+                    className={`text-muted transition-transform shrink-0 ${locationOpen ? 'rotate-180' : ''}`}
                   />
                 </div>
-                <span className="text-[10px] text-muted font-medium">We serve your area</span>
+                <span className="text-[10px] text-muted font-medium block truncate">{displayLocationSub}</span>
               </div>
             </button>
-
-            {locationOpen && (
-              <div className="absolute left-0 top-full mt-2 w-64 rounded-2xl border border-slate-100 bg-white p-2 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150">
-                <p className="px-3 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Select City
-                </p>
-                <div className="space-y-1">
-                  {locations.map((loc) => {
-                    const isSelected = city === loc.name;
-                    return (
-                      <button
-                        key={loc.name}
-                        onClick={() => { setCity(loc.name); setLocationOpen(false); }}
-                        className={`flex w-full items-start justify-start h-auto gap-3 rounded-xl px-3 py-2.5 text-left transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-blue-50/80 text-primary'
-                            : 'text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        <div className="w-5 h-5 flex items-center justify-center shrink-0 mt-0.5">
-                          <MapPin
-                            size={18}
-                            weight={isSelected ? "bold" : "regular"}
-                            className={isSelected ? 'text-primary' : 'text-primary/70'}
-                          />
-                        </div>
-                        <div className="flex flex-col min-w-0 text-left">
-                          <span className={`text-[13px] leading-snug ${isSelected ? 'font-bold text-primary' : 'font-semibold text-slate-800'}`}>
-                            {loc.name}
-                          </span>
-                          <span className={`text-[11px] leading-snug mt-0.5 ${isSelected ? 'text-primary/70 font-medium' : 'text-slate-400 font-normal'}`}>
-                            {loc.sub}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* User Profile / Login */}
@@ -183,22 +159,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onClick={() => { setUserMenuOpen(false); onMyBookingsClick?.(); }}
                       className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
-                      <CalendarBlank size={16} className="text-primary" />
+                      <CalendarBlank size={16} className="text-slate-400" />
                       My Bookings
                     </button>
-
-                    {user.role === 'admin' && (
-                      <a
-                        href="http://localhost:5174"
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
-                      >
-                        <User size={16} className="text-amber-500" />
-                        Admin Dashboard ↗
-                      </a>
-                    )}
 
                     <button
                       onClick={() => { setUserMenuOpen(false); onLogoutClick?.(); }}
@@ -244,6 +207,26 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ── MOBILE DROPDOWN ── */}
       {mobileOpen && (
         <div className="lg:hidden mx-auto mt-3 max-w-[1280px] rounded-3xl border border-slate-100 bg-white p-5 shadow-2xl space-y-1">
+          {/* Location Badge (Mobile) */}
+          <button
+            onClick={() => { handleLocationBadgeClick(); setMobileOpen(false); }}
+            className="flex items-center gap-3 w-full rounded-2xl bg-blue-50/70 p-3 mb-2 border border-blue-100/80 cursor-pointer"
+          >
+            <div className="h-7 w-7 overflow-hidden rounded-full border-2 border-white shadow-sm shrink-0">
+              <svg viewBox="0 0 30 20" className="h-full w-full">
+                <rect width="10" height="20" fill="#CE1126" />
+                <rect x="10" width="20" height="6.67" fill="#009A3D" />
+                <rect x="10" y="6.67" width="20" height="6.67" fill="#FFFFFF" />
+                <rect x="10" y="13.33" width="20" height="6.67" fill="#000000" />
+              </svg>
+            </div>
+            <div className="text-left leading-tight min-w-0 flex-1">
+              <span className="text-[13px] font-bold text-slate-800 block truncate">{displayLocationTitle}</span>
+              <span className="text-[11px] text-primary font-medium block truncate">{displayLocationSub}</span>
+            </div>
+            <CaretDown size={14} className="text-slate-400 shrink-0" />
+          </button>
+
           {navLinks.map((link) => (
             <button
               key={link}

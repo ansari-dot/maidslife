@@ -296,15 +296,25 @@ export const BookingPage: React.FC<BookingPageProps> = ({
         if (u.phone) setCustomerPhone(u.phone);
       }
     });
+
+    try {
+      const savedLoc = localStorage.getItem('maidslife_selected_location');
+      if (savedLoc) {
+        const parsed = JSON.parse(savedLoc);
+        if (parsed.address) {
+          setAddressDetails(parsed.address);
+        }
+      }
+    } catch (e) {}
   }, []);
 
   // PRICE CALCULATIONS
   const variantsPrice = selectedService?.variants
     ? selectedService.variants.reduce((sum, v) => {
-        const vId = v.id || (v as any)._id;
-        const q = variantQuantities[vId] || 0;
-        return sum + (v.price || 0) * q;
-      }, 0)
+      const vId = v.id || (v as any)._id;
+      const q = variantQuantities[vId] || 0;
+      return sum + (v.price || 0) * q;
+    }, 0)
     : 0;
 
   const addonsPrice = selectedService?.addons
@@ -379,13 +389,13 @@ export const BookingPage: React.FC<BookingPageProps> = ({
 
     const selectedVariantsList = selectedService?.variants
       ? selectedService.variants
-          .filter((v) => (variantQuantities[v.id || (v as any)._id] || 0) > 0)
-          .map((v) => ({
-            id: v.id || (v as any)._id,
-            name: v.name,
-            quantity: variantQuantities[v.id || (v as any)._id] || 0,
-            price: v.price,
-          }))
+        .filter((v) => (variantQuantities[v.id || (v as any)._id] || 0) > 0)
+        .map((v) => ({
+          id: v.id || (v as any)._id,
+          name: v.name,
+          quantity: variantQuantities[v.id || (v as any)._id] || 0,
+          price: v.price,
+        }))
       : [];
 
     const variantNameStr = selectedVariantsList.map((v) => `${v.name} (x${v.quantity})`).join(', ');
@@ -558,8 +568,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             type="button"
                             onClick={() => handleCategoryChange(cat.id)}
                             className={`shrink-0 w-24 rounded-[14px] border-2 transition-all flex flex-col items-center cursor-pointer p-1 snap-start ${isSelected
-                                ? 'border-[#00D1FF] bg-white shadow-sm ring-2 ring-[#00D1FF]/20'
-                                : 'border-transparent bg-white hover:bg-slate-50'
+                              ? 'border-[#00D1FF] bg-white shadow-sm ring-2 ring-[#00D1FF]/20'
+                              : 'border-transparent bg-white hover:bg-slate-50'
                               }`}
                             style={{ fontFamily: M }}
                           >
@@ -628,8 +638,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                   )}
                                 </div>
                                 <div className={`px-5 py-1.5 rounded-full text-[13px] font-extrabold transition-all shadow-sm ${isSelected
-                                    ? 'bg-[#0C3352] text-white'
-                                    : 'bg-[#00D1FF] text-white hover:brightness-110'
+                                  ? 'bg-[#0C3352] text-white'
+                                  : 'bg-[#00D1FF] text-white hover:brightness-110'
                                   }`} style={{ fontFamily: M }}>
                                   {isSelected ? 'Selected' : 'Add +'}
                                 </div>
@@ -670,11 +680,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                   [vId]: (prev[vId] || 0) > 0 ? 0 : 1,
                                 }));
                               }}
-                              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                                isSelected
+                              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${isSelected
                                   ? 'bg-[#E8F3FF] border-[#0084FF] shadow-xs ring-1 ring-[#0084FF]'
                                   : 'bg-white border-slate-200 hover:border-slate-300'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center gap-3 w-full">
                                 {v.image && (
@@ -765,8 +774,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                 type="button"
                                 onClick={() => setPropertyType(prop.key)}
                                 className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${isSelected
-                                    ? 'border-[#0084FF] bg-[#E8F3FF] ring-2 ring-[#0084FF] text-[#0084FF]'
-                                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                                  ? 'border-[#0084FF] bg-[#E8F3FF] ring-2 ring-[#0084FF] text-[#0084FF]'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                                   }`}
                               >
                                 <span className="text-xl mb-1">{prop.icon}</span>
@@ -977,8 +986,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                     type="button"
                                     onClick={() => setVehicleType(veh.id)}
                                     className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center ${isSelected
-                                        ? 'border-[#0084FF] bg-[#E8F3FF] ring-2 ring-[#0084FF]'
-                                        : 'border-slate-200 bg-white hover:border-slate-300'
+                                      ? 'border-[#0084FF] bg-[#E8F3FF] ring-2 ring-[#0084FF]'
+                                      : 'border-slate-200 bg-white hover:border-slate-300'
                                       }`}
                                   >
                                     <span className="text-2xl mb-1">{veh.icon}</span>
@@ -1151,11 +1160,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                 key={freq.key}
                                 type="button"
                                 onClick={() => setFrequency(freq.key as any)}
-                                className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
-                                  isSelected
+                                className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${isSelected
                                     ? 'border-[#0084FF] bg-[#E8F3FF] ring-2 ring-[#0084FF] text-[#0084FF]'
                                     : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                                }`}
+                                  }`}
                               >
                                 <span className="text-xs font-extrabold" style={{ fontFamily: M }}>{freq.label}</span>
                                 {freq.discount ? (
@@ -1178,9 +1186,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                   key={day}
                                   type="button"
                                   onClick={() => setRecurringDay(day)}
-                                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                                    recurringDay === day ? 'bg-[#0084FF] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                  }`}
+                                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${recurringDay === day ? 'bg-[#0084FF] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
                                 >
                                   {day.slice(0, 3)}
                                 </button>
@@ -1359,10 +1366,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             disabled={isBusy}
                             onClick={() => !isBusy && setSelectedTimeSlot(slot)}
                             className={`py-2.5 px-3 rounded-full text-xs font-bold border transition-all ${isBusy
-                                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
-                                : isSelected
-                                  ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF] cursor-pointer ring-2 ring-[#0084FF]'
-                                  : 'border-slate-200 bg-white text-[#0C3352] hover:border-slate-300 cursor-pointer'
+                              ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+                              : isSelected
+                                ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF] cursor-pointer ring-2 ring-[#0084FF]'
+                                : 'border-slate-200 bg-white text-[#0C3352] hover:border-slate-300 cursor-pointer'
                               }`}
                             style={{ fontFamily: M }}
                           >

@@ -5,6 +5,7 @@ import { WhatsAppButton } from './components/WhatsAppButton';
 import { WelcomePopup } from './components/WelcomePopup';
 import { AuthModal } from './components/AuthModal';
 import { MyBookingsModal } from './components/MyBookingsModal';
+import { LocationModal, LocationData } from './components/LocationModal';
 import { clientApi } from './services/api';
 import { trackPageView, trackEvent } from './analytics';
 
@@ -20,16 +21,58 @@ import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
 import { PaymentFailedPage } from './pages/PaymentFailedPage';
 import { PaymentCancelledPage } from './pages/PaymentCancelledPage';
 
+// React Error Boundary Component
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.warn('React ErrorBoundary caught an exception:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 text-center bg-amber-50 text-amber-800 rounded-xl my-4 text-xs font-bold border border-amber-200">
+          Component error recovered automatically.{' '}
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            className="underline ml-2 cursor-pointer"
+          >
+            Reload Component
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [routeState, setRouteState] = useState<any>(null);
   const [user, setUser] = useState<{ name: string; email: string; role?: string } | null>(null);
   const [marketingSettings, setMarketingSettings] = useState<any>(null);
 
-  // Auth & Bookings Modal State
+  // Auth & Bookings & Location Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
   const [isBookingsModalOpen, setIsBookingsModalOpen] = useState(false);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<LocationData | undefined>(() => {
+    try {
+      const saved = localStorage.getItem('maidslife_selected_location');
+      return saved ? JSON.parse(saved) : undefined;
+    } catch (_) {
+      return undefined;
+    }
+  });
 
   const openAuthModal = (mode: 'login' | 'signup' = 'login') => {
     setAuthModalMode(mode);
@@ -76,6 +119,17 @@ export function App() {
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Auto-show Location Picker Modal popup on website load
+  useEffect(() => {
+    const sessionDismissed = sessionStorage.getItem('maidslife_location_dismissed');
+    if (!sessionDismissed) {
+      const timer = setTimeout(() => {
+        setIsLocationModalOpen(true);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const navigate = (newPath: string, state?: any) => {
@@ -229,6 +283,8 @@ export function App() {
             onLoginClick={() => openAuthModal('login')}
             onLogoutClick={handleLogout}
             onMyBookingsClick={() => setIsBookingsModalOpen(true)}
+            onLocationClick={() => setIsLocationModalOpen(true)}
+            selectedLocation={selectedLocation}
             user={user}
           />
         </div>
@@ -246,10 +302,21 @@ export function App() {
       {/* ── PERSISTENT FLOATING WHATSAPP BUTTON ── */}
       <WhatsAppButton />
 
-      {/* ── WELCOME POPUP ── */}
-      {marketingSettings?.welcomePopup && (
-        <WelcomePopup settings={marketingSettings.welcomePopup} />
-      )}
+      {/* ── LOCATION PICKER MODAL POPUP (JustLife Style) ── */}
+      <ErrorBoundary>
+        <LocationModal
+          isOpen={isLocationModalOpen}
+          onClose={() => {
+            setIsLocationModalOpen(false);
+            sessionStorage.setItem('maidslife_location_dismissed', 'true');
+          }}
+          onSelectLocation={(loc) => {
+            setSelectedLocation(loc);
+            sessionStorage.setItem('maidslife_location_dismissed', 'true');
+          }}
+          currentLocation={selectedLocation}
+        />
+      </ErrorBoundary>
 
       {/* ── LOGIN / SIGNUP MODAL POPUP ── */}
       {isAuthModalOpen && (
