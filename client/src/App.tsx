@@ -54,8 +54,22 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
+// Region URL Helper - extracts region prefix (e.g. /ae, /ae-en, /sa) and sub-path
+const parseRegionFromPath = (path: string) => {
+  const match = (path || '/').match(/^\/([a-z]{2}(?:-[a-z]{2})?)(?:\/|$)(.*)/i);
+  if (match) {
+    const code = match[1].toLowerCase();
+    const subPath = '/' + (match[2] || '');
+    return { region: code, path: subPath === '//' ? '/' : subPath };
+  }
+  return { region: 'ae', path: path || '/' };
+};
+
 export function App() {
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const initialParsed = parseRegionFromPath(window.location.pathname);
+  const [regionCode, setRegionCode] = useState<string>(initialParsed.region);
+  const [currentPath, setCurrentPath] = useState<string>(initialParsed.path);
+
   const [routeState, setRouteState] = useState<any>(null);
   const [user, setUser] = useState<{ name: string; email: string; role?: string } | null>(null);
   const [marketingSettings, setMarketingSettings] = useState<any>(null);
@@ -79,21 +93,30 @@ export function App() {
     setIsAuthModalOpen(true);
   };
 
+  // URL Region Prefix Normalization on Initial Load
+  useEffect(() => {
+    const parsed = parseRegionFromPath(window.location.pathname);
+    const fullRegionalPath = `/${parsed.region}${parsed.path === '/' ? '' : parsed.path}`;
+    if (window.location.pathname !== fullRegionalPath) {
+      window.history.replaceState(null, '', fullRegionalPath);
+    }
+  }, []);
+
   useEffect(() => {
     // Update document title based on route
     let pageTitle = 'Maidslife - #1 Super App for Home Services in UAE';
-    if (currentPath.startsWith('/services')) pageTitle = 'Services | Maidslife';
-    else if (currentPath.startsWith('/about')) pageTitle = 'About Us | Maidslife';
-    else if (currentPath.startsWith('/careers')) pageTitle = 'Careers | Maidslife';
-    else if (currentPath.startsWith('/contact')) pageTitle = 'Contact | Maidslife';
-    else if (currentPath.startsWith('/booking')) pageTitle = 'Booking | Maidslife';
-    else if (currentPath.startsWith('/service/')) pageTitle = 'Service Details | Maidslife';
+    if (currentPath.startsWith('/services')) pageTitle = 'Services | Maidslife UAE';
+    else if (currentPath.startsWith('/about')) pageTitle = 'About Us | Maidslife UAE';
+    else if (currentPath.startsWith('/careers')) pageTitle = 'Careers | Maidslife UAE';
+    else if (currentPath.startsWith('/contact')) pageTitle = 'Contact | Maidslife UAE';
+    else if (currentPath.startsWith('/booking')) pageTitle = 'Booking | Maidslife UAE';
+    else if (currentPath.startsWith('/service/')) pageTitle = 'Service Details | Maidslife UAE';
 
     document.title = pageTitle;
 
     // Track page views on route changes
-    trackPageView(currentPath, pageTitle);
-  }, [currentPath]);
+    trackPageView(`/${regionCode}${currentPath === '/' ? '' : currentPath}`, pageTitle);
+  }, [currentPath, regionCode]);
 
   useEffect(() => {
     // Restore session if user was logged in
@@ -106,14 +129,18 @@ export function App() {
     });
 
     // Check if initial URL was /login or /signup
-    if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
-      openAuthModal(window.location.pathname === '/signup' ? 'signup' : 'login');
-      window.history.replaceState(null, '', '/');
+    const parsed = parseRegionFromPath(window.location.pathname);
+    if (parsed.path === '/login' || parsed.path === '/signup') {
+      openAuthModal(parsed.path === '/signup' ? 'signup' : 'login');
+      const cleanPath = `/${parsed.region}`;
+      window.history.replaceState(null, '', cleanPath);
       setCurrentPath('/');
     }
 
     const handlePopState = (e: PopStateEvent) => {
-      setCurrentPath(window.location.pathname);
+      const p = parseRegionFromPath(window.location.pathname);
+      setRegionCode(p.region);
+      setCurrentPath(p.path);
       setRouteState(e.state);
       window.scrollTo(0, 0);
     };
@@ -138,8 +165,14 @@ export function App() {
       return;
     }
 
-    window.history.pushState(state || null, '', newPath);
-    setCurrentPath(newPath);
+    const parsed = parseRegionFromPath(newPath);
+    const targetCleanPath = parsed.path;
+    const targetRegion = parsed.region !== 'ae' ? parsed.region : regionCode;
+    const fullRegionalPath = `/${targetRegion}${targetCleanPath === '/' ? '' : targetCleanPath}`;
+
+    window.history.pushState(state || null, '', fullRegionalPath);
+    setRegionCode(targetRegion);
+    setCurrentPath(targetCleanPath);
     setRouteState(state || null);
     window.scrollTo(0, 0);
   };
@@ -313,6 +346,11 @@ export function App() {
           onSelectLocation={(loc) => {
             setSelectedLocation(loc);
             sessionStorage.setItem('maidslife_location_dismissed', 'true');
+            // Dynamic region code directly from map location!
+            const newRegion = (loc.countryCode || 'ae').toLowerCase();
+            setRegionCode(newRegion);
+            const fullRegionalPath = `/${newRegion}${currentPath === '/' ? '' : currentPath}`;
+            window.history.replaceState(null, '', fullRegionalPath);
           }}
           currentLocation={selectedLocation}
         />

@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Search, X, Check, Crosshair, Loader2, Home, Briefcase, Tag, ChevronDown, ChevronUp, Clock, AlertTriangle } from 'lucide-react';
 
 export interface LocationData {
-  city: 'Dubai' | 'Abu Dhabi' | 'Sharjah';
+  city: 'Dubai' | 'Abu Dhabi' | 'Sharjah' | string;
   area: string;
   address: string;
   lat: number;
   lng: number;
+  countryCode?: string;
   buildingName?: string;
   apartmentNo?: string;
   floorNo?: string;
@@ -94,6 +95,9 @@ export const LocationModal: React.FC<LocationModalProps> = ({
       ? { lat: currentLocation.lat, lng: currentLocation.lng }
       : cityData.center
   );
+
+  // Dynamic Country Code from Map Geocoding
+  const [detectedCountryCode, setDetectedCountryCode] = useState<string>(currentLocation?.countryCode || 'ae');
 
   // Out of Service Area state
   const [isOutOfServiceArea, setIsOutOfServiceArea] = useState(false);
@@ -257,8 +261,10 @@ export const LocationModal: React.FC<LocationModalProps> = ({
         const road = addr.road || addr.pedestrian || addr.suburb || addr.neighbourhood || '';
         const suburb = addr.suburb || addr.neighbourhood || addr.city_district || addr.quarter || '';
         const city = addr.city || addr.state || addr.county || selectedCity;
-        const countryCode = (addr.country_code || '').toLowerCase();
+        const countryCode = (addr.country_code || 'ae').toLowerCase();
         const country = (addr.country || data.display_name || '').toLowerCase();
+
+        setDetectedCountryCode(countryCode);
 
         // Check if location is inside UAE boundaries (Dubai, Abu Dhabi, Sharjah)
         const isUAE = countryCode === 'ae' || country.includes('united arab emirates') || country.includes('uae');
@@ -400,6 +406,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({
       address: fullFormattedAddress,
       lat: coordinates.lat,
       lng: coordinates.lng,
+      countryCode: detectedCountryCode || 'ae',
       buildingName,
       apartmentNo,
       floorNo,
