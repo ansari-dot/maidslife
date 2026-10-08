@@ -407,7 +407,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
 
     const bookingPayload = {
       service: selectedService?.id,
-      variantId: selectedVariantsList[0]?.id || null,
+      variantId: selectedVariantsList[0]?.id || undefined,
       variantName: variantNameStr || '',
       variantQuantities: selectedVariantsList,
       addons: selectedAddonIds,
@@ -1465,10 +1465,9 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-[#0C3352] uppercase mb-1" style={{ fontFamily: M }}>Phone / WhatsApp *</label>
+                        <label className="block text-xs font-bold text-[#0C3352] uppercase mb-1" style={{ fontFamily: M }}>Phone / WhatsApp (Optional)</label>
                         <input
                           type="tel"
-                          required
                           placeholder="+971 50 123 4567"
                           value={customerPhone}
                           onChange={(e) => setCustomerPhone(e.target.value)}

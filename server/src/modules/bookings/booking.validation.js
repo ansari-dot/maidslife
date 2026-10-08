@@ -9,8 +9,8 @@ export const createBookingSchema = z.object({
     service: z.string().min(1, 'Service ID is required'),
 
     addons: z.array(z.string()).optional(),
-    variantId: z.string().optional(),
-    variantName: z.string().optional(),
+    variantId: z.string().nullable().optional(),
+    variantName: z.string().nullable().optional(),
     variants: z
       .array(
         z.object({
@@ -34,6 +34,7 @@ export const createBookingSchema = z.object({
     paymentMethod: z.string().optional(),
     internalNotes: z.string().optional(),
     hours: z.number().optional(),
+    extraHours: z.number().optional(),
     professionalsCount: z.number().optional(),
     needCleaningMaterials: z.boolean().optional(),
     specialInstructions: z.string().optional(),

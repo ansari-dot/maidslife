@@ -214,6 +214,7 @@ export const clientApi = {
         quantity: bookingPayload.quantity,
         weight: bookingPayload.weight,
         itemType: bookingPayload.itemType,
+        extraHours: bookingPayload.extraHours,
         pickupLocation: bookingPayload.pickupLocation,
         dropoffLocation: bookingPayload.dropoffLocation,
         vehicleType: bookingPayload.vehicleType,
@@ -237,7 +238,8 @@ export const clientApi = {
           paymentUrl: json.paymentUrl || (json.data && json.data.paymentUrl),
         };
       } else {
-        return { success: false, message: json.message || 'Failed to submit booking.' };
+        const errorDetails = (json.errors && json.errors.length > 0) ? ': ' + json.errors.join(', ') : '';
+        return { success: false, message: (json.message || 'Failed to submit booking.') + errorDetails };
       }
     } catch (err: any) {
       console.warn('Booking POST error:', err);

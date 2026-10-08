@@ -45,8 +45,8 @@ function normalizeItem<T extends any>(item: T): T {
     id: (item as any).id || (item as any)._id || `id-${Math.random()}`,
   };
 
-  if ((item as any).category !== undefined) normalized.categoryId = typeof (item as any).category === 'object' ? (item as any).category._id : (item as any).category;
-  if ((item as any).service !== undefined) normalized.serviceId = typeof (item as any).service === 'object' ? (item as any).service._id : (item as any).service;
+  if ((item as any).category !== undefined) normalized.categoryId = ((item as any).category && typeof (item as any).category === 'object') ? (item as any).category._id : (item as any).category;
+  if ((item as any).service !== undefined) normalized.serviceId = ((item as any).service && typeof (item as any).service === 'object') ? (item as any).service._id : (item as any).service;
   if ((item as any).icon !== undefined) {
     normalized.icon = (item as any).icon;
     normalized.iconName = (item as any).icon;
@@ -97,12 +97,22 @@ function normalizeItem<T extends any>(item: T): T {
     normalized.specialInstructions = (item as any).specialInstructions;
     
     if ((item as any).scheduledAt) {
-      const d = new Date((item as any).scheduledAt);
-      normalized.date = d.toISOString().split('T')[0];
-      const hours = d.getHours().toString().padStart(2, '0');
-      const mins = d.getMinutes().toString().padStart(2, '0');
-      const endHours = (d.getHours() + 1).toString().padStart(2, '0');
-      normalized.timeSlot = `${hours}:${mins}-${endHours}:${mins}`;
+      try {
+        const d = new Date((item as any).scheduledAt);
+        if (!isNaN(d.getTime())) {
+          normalized.date = d.toISOString().split('T')[0];
+          const hours = d.getHours().toString().padStart(2, '0');
+          const mins = d.getMinutes().toString().padStart(2, '0');
+          const endHours = (d.getHours() + 1).toString().padStart(2, '0');
+          normalized.timeSlot = `${hours}:${mins}-${endHours}:${mins}`;
+        } else {
+          normalized.date = new Date().toISOString().split('T')[0];
+          normalized.timeSlot = '08:00-09:00';
+        }
+      } catch (e) {
+        normalized.date = new Date().toISOString().split('T')[0];
+        normalized.timeSlot = '08:00-09:00';
+      }
     } else if (!normalized.timeSlot) {
       normalized.timeSlot = '08:00-09:00';
     }
@@ -259,8 +269,9 @@ export const apiService = {
 
   // --- BOOKINGS ---
   async getBookings(): Promise<BookingDetails[]> {
-    const data = await request<BookingDetails[]>('/bookings');
-    return normalizeList(data);
+    const data: any = await request('/bookings');
+    const bookingsList = data.bookings || (Array.isArray(data) ? data : []);
+    return normalizeList(bookingsList);
   },
   async createBooking(bk: Omit<BookingDetails, 'id' | 'bookingRef' | 'timeline' | 'createdAt'>): Promise<BookingDetails> {
     const data = await request<BookingDetails>('/bookings', {

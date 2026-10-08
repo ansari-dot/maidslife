@@ -11,7 +11,7 @@ import {
   CalendarBlank,
 } from '@phosphor-icons/react';
 import { clientApi } from '../services/api';
-import { ServiceItem } from '../data/servicesData';
+import { ServiceItem, ServiceCategory } from '../data/servicesData';
 
 const M = "'Manrope', sans-serif";
 
@@ -32,34 +32,6 @@ const getIconComponent = (iconName?: string): React.ElementType => {
   }
 };
 
-interface ServiceItem {
-  id: number;
-  icon: React.ElementType;
-  titleLine1: string;
-  titleLine2: string;
-  description: string;
-  features: string[];
-  image: string;
-  linkText: string;
-}
-
-
-
-// Sparkles Cluster Graphic
-const SparklesCluster: React.FC = () => (
-  <div className="relative w-7 h-8 pointer-events-none select-none shrink-0">
-    <svg viewBox="0 0 24 24" fill="#0084FF" className="absolute top-0 right-1 w-3.5 h-3.5">
-      <path d="M12 0C12 6.627 6.627 12 0 12C6.627 12 12 17.373 12 24C12 17.373 17.373 12 24 12C17.373 12 12 6.627 12 0Z" />
-    </svg>
-    <svg viewBox="0 0 24 24" fill="#0084FF" className="absolute top-2.5 left-0 w-4.5 h-4.5">
-      <path d="M12 0C12 6.627 6.627 12 0 12C6.627 12 12 17.373 12 24C12 17.373 17.373 12 24 12C17.373 12 12 6.627 12 0Z" />
-    </svg>
-    <svg viewBox="0 0 24 24" fill="#0084FF" className="absolute bottom-0 right-2 w-2.5 h-2.5">
-      <path d="M12 0C12 6.627 6.627 12 0 12C6.627 12 12 17.373 12 24C12 17.373 17.373 12 24 12C17.373 12 12 6.627 12 0Z" />
-    </svg>
-  </div>
-);
-
 interface ServicesPageProps {
   onServiceSelect?: (serviceTitle: string) => void;
   onBookClick?: () => void;
@@ -67,28 +39,44 @@ interface ServicesPageProps {
 
 export const ServicesPage: React.FC<ServicesPageProps> = ({ onServiceSelect, onBookClick }) => {
   const [servicesList, setServicesList] = useState<ServiceItem[]>([]);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    clientApi.getServices().then((data) => {
+    
+    Promise.all([
+      clientApi.getServices(),
+      clientApi.getCategories()
+    ]).then(([servicesData, categoriesData]) => {
       if (isMounted) {
-        setServicesList(data);
+        setServicesList(servicesData);
+        setCategories(categoriesData);
+        setIsLoading(false);
       }
+    }).catch(() => {
+      if (isMounted) setIsLoading(false);
     });
+
     return () => {
       isMounted = false;
     };
   }, []);
 
-  return (
-    <div className="w-full bg-white min-h-screen pt-[130px]">
+  const filteredServices = activeCategory === 'all' 
+    ? servicesList 
+    : servicesList.filter(s => s.categoryId === activeCategory);
 
-      {/* ── TOP PAGE HEADER BANNER (NO HERO SECTION) ── */}
-      <div className="w-full bg-white pt-10 pb-14 px-6 sm:px-12 text-center">
-        <div className="mx-auto max-w-[780px]">
+  return (
+    <div className="w-full bg-[#FAFAFA] min-h-screen pt-[130px] pb-24">
+      
+      {/* ── HEADER SECTION ── */}
+      <div className="w-full pt-10 pb-12 px-6 sm:px-12 text-center">
+        <div className="mx-auto max-w-[800px]">
           <div
-            className="inline-flex items-center gap-2 rounded-full bg-[#E8F3FF] px-4 py-1.5 text-[#0C3352] tracking-wider uppercase mb-4"
-            style={{ fontFamily: M, fontSize: '11px', fontWeight: 700, lineHeight: '18px' }}
+            className="inline-flex items-center gap-2 bg-[#E8F3FF] px-4 py-1.5 text-[#0C3352] tracking-wider uppercase mb-6"
+            style={{ fontFamily: M, fontSize: '11px', fontWeight: 700, lineHeight: '18px', borderRadius: '2px' }}
           >
             <span className="opacity-70">—</span>
             OUR SERVICES
@@ -96,141 +84,144 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onServiceSelect, onB
           </div>
 
           <h1
-            className="text-[#0C3352]"
-            style={{ fontFamily: M, fontWeight: 800, }}
+            className="text-[#0C3352] leading-tight"
+            style={{ fontFamily: M, fontWeight: 800, fontSize: '42px' }}
           >
-            Professional Cleaning Services<br />
-            <span className="text-[#0084FF]">for a Healthier, Happier Space</span>
+            Professional Solutions <br />
+            <span className="text-[#0084FF]">Tailored For You</span>
           </h1>
 
           <p
-            className="mt-4 text-[#5A6E7F]"
+            className="mt-6 text-[#5A6E7F] max-w-[600px] mx-auto"
             style={{ fontFamily: M, fontSize: '16px', fontWeight: 400, lineHeight: '26px' }}
           >
-            From homes to offices, we offer a complete range of professional cleaning solutions in Dubai designed to give you a fresh, spotless and comfortable environment.
+            Explore our comprehensive range of high-quality services. Designed with precision, delivered with excellence.
           </p>
         </div>
       </div>
 
-      {/* ── FULL WIDTH ZIG-ZAG SECTIONS WITH FULL HEIGHT ABSOLUTE IMAGES ── */}
-      <div>
-        {servicesList.map((service, index) => {
-          const Icon = getIconComponent(service.iconName);
-          const fullTitle = service.name;
-          const isImageLeft = index % 2 === 0;
-          const isBgWhite = index % 2 === 0;
-          const bgClass = isBgWhite ? 'bg-white' : 'bg-[#F8FAFC]';
-
-          return (
-            <section
-              key={service.id}
-              className={`relative w-full py-16 sm:py-24 border-b border-slate-100 overflow-hidden ${bgClass}`}
+      {/* ── CATEGORY FILTER ── */}
+      <div className="mx-auto max-w-[1280px] px-6 sm:px-12 mb-12">
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={() => setActiveCategory('all')}
+            className={`px-6 py-2.5 text-sm font-bold transition-colors ${
+              activeCategory === 'all'
+                ? 'bg-[#0C3352] text-white'
+                : 'bg-white text-[#5A6E7F] border border-[#E2E8F0] hover:bg-[#F1F5F9]'
+            }`}
+            style={{ fontFamily: M, borderRadius: '2px' }}
+          >
+            All Services
+          </button>
+          
+          {categories.map(category => (
+            <button
+              key={category.id}
+              onClick={() => setActiveCategory(category.id.toString())}
+              className={`px-6 py-2.5 text-sm font-bold transition-colors ${
+                activeCategory === category.id.toString()
+                  ? 'bg-[#0C3352] text-white'
+                  : 'bg-white text-[#5A6E7F] border border-[#E2E8F0] hover:bg-[#F1F5F9]'
+              }`}
+              style={{ fontFamily: M, borderRadius: '2px' }}
             >
-              {/* ── FULL HEIGHT ABSOLUTE BACKGROUND IMAGE (SAME AS HOMEPAGE CARD IMAGE) ── */}
-              <div
-                className={`absolute top-0 bottom-0 w-full lg:w-[55%] overflow-hidden pointer-events-none select-none ${isImageLeft ? 'left-0' : 'right-0'
-                  }`}
-              >
-                <img
-                  src={service.image}
-                  alt={fullTitle}
-                  className="h-full w-full object-cover object-center"
-                />
-                {/* Smooth Fade Gradient Mask blending image directly into section background */}
-                <div
-                  className={`absolute inset-0 hidden lg:block ${isImageLeft
-                      ? isBgWhite
-                        ? 'bg-gradient-to-r from-transparent via-white/80 to-white'
-                        : 'bg-gradient-to-r from-transparent via-[#F8FAFC]/80 to-[#F8FAFC]'
-                      : isBgWhite
-                        ? 'bg-gradient-to-l from-transparent via-white/80 to-white'
-                        : 'bg-gradient-to-l from-transparent via-[#F8FAFC]/80 to-[#F8FAFC]'
-                    }`}
-                />
-                {/* Mobile gradient overlay */}
-                <div
-                  className={`absolute inset-0 lg:hidden ${isBgWhite
-                      ? 'bg-gradient-to-b from-transparent via-white/90 to-white'
-                      : 'bg-gradient-to-b from-transparent via-[#F8FAFC]/90 to-[#F8FAFC]'
-                    }`}
-                />
-              </div>
+              {category.name}
+            </button>
+          ))}
+        </div>
+      </div>
 
-              {/* ── CONTENT CONTAINER (MAX-W 1280PX) ── */}
-              <div className="relative z-10 mx-auto max-w-[1280px] px-6 sm:px-12">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      {/* ── SERVICES GRID (CARD UI WITH SHARP EDGES) ── */}
+      <div className="mx-auto max-w-[1280px] px-6 sm:px-12">
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin w-8 h-8 border-4 border-[#0084FF] border-t-transparent"></div>
+          </div>
+        ) : filteredServices.length === 0 ? (
+          <div className="text-center py-20 text-[#5A6E7F]" style={{ fontFamily: M }}>
+            No services found for the selected category.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredServices.map(service => {
+              const Icon = getIconComponent(service.iconName);
+              
+              return (
+                <div 
+                  key={service.id} 
+                  className="bg-white border border-[#E2E8F0] flex flex-col group hover:shadow-xl transition-shadow duration-300"
+                  style={{ borderRadius: '2px' }}
+                >
+                  {/* Card Image */}
+                  <div className="relative h-56 w-full overflow-hidden bg-slate-100">
+                    <img
+                      src={service.image}
+                      alt={service.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    {/* Category badge overlay */}
+                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 text-xs font-bold text-[#0084FF] uppercase tracking-wide border border-white" style={{ borderRadius: '2px' }}>
+                      {categories.find(c => c.id.toString() === service.categoryId?.toString())?.name || 'Service'}
+                    </div>
+                  </div>
 
-                  {/* CONTENT COLUMN (6 COLS) */}
-                  <div
-                    className={`lg:col-span-6 flex flex-col justify-center ${isImageLeft ? 'lg:col-start-7' : 'lg:col-start-1'
-                      }`}
-                  >
-                    {/* Icon Circle & Sparkles */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-13 w-13 items-center justify-center rounded-full bg-gradient-to-b from-[#EBF5FF] to-[#D5E9FF] border border-[#CCE3FF] text-[#0066CC] shadow-xs">
-                        <Icon size={26} weight="regular" />
+                  {/* Card Content */}
+                  <div className="p-6 flex flex-col flex-grow">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex h-10 w-10 items-center justify-center bg-[#F1F5F9] text-[#0084FF] border border-[#E2E8F0]" style={{ borderRadius: '2px' }}>
+                        <Icon size={20} weight="regular" />
                       </div>
-                      <SparklesCluster />
+                      <h3 
+                        className="text-xl text-[#0C3352] leading-tight"
+                        style={{ fontFamily: M, fontWeight: 800 }}
+                      >
+                        {service.name}
+                      </h3>
                     </div>
 
-                    {/* Title */}
-                    <h2
-                      className="mt-5 text-[#0C3352]"
-                      style={{ fontFamily: M, fontWeight: 800, }}
+                    <p 
+                      className="text-[#5A6E7F] mb-6 flex-grow"
+                      style={{ fontFamily: M, fontSize: '14px', lineHeight: '22px' }}
                     >
-                      {service.name}
-                    </h2>
-
-                    {/* Description */}
-                    <p
-                      className="mt-4 text-[#5A6E7F] max-w-[540px]"
-                      style={{ fontFamily: M, fontSize: '15px', fontWeight: 400, lineHeight: '24px' }}
-                    >
-                      {service.description}
+                      {service.description.length > 120 ? service.description.substring(0, 120) + '...' : service.description}
                     </p>
 
-                    {/* Feature Checkpoints */}
-                    <div className="mt-6 space-y-3">
-                      {service.features.map((feat, fIdx) => (
-                        <div key={fIdx} className="flex items-center gap-3">
-                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0084FF] text-white">
-                            <Check size={12} weight="bold" />
-                          </div>
-                          <span style={{ fontFamily: M, fontSize: '14px', fontWeight: 600, color: '#0C3352' }}>
-                            {feat}
-                          </span>
+                    {/* Features List (up to 3) */}
+                    <div className="space-y-2 mb-8">
+                      {service.features.slice(0, 3).map((feat, idx) => (
+                        <div key={idx} className="flex items-start gap-2">
+                          <Check size={16} weight="bold" className="text-[#0084FF] shrink-0 mt-0.5" />
+                          <span className="text-[#0C3352] text-sm font-semibold" style={{ fontFamily: M }}>{feat}</span>
                         </div>
                       ))}
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="mt-8 flex flex-wrap items-center gap-4">
+                    {/* Card Actions */}
+                    <div className="grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-[#F1F5F9]">
                       <button
-                        onClick={() => onServiceSelect?.(service.slug || service.id)}
-                        className="inline-flex items-center gap-2 rounded-full bg-[#0C3352] text-white hover:bg-[#0084FF] px-7 py-3.5 text-sm font-bold transition-all duration-300 focus:outline-none shadow-md hover:shadow-lg"
-                        style={{ fontFamily: M }}
+                        onClick={() => onServiceSelect?.(service.slug || service.id.toString())}
+                        className="flex items-center justify-center gap-2 bg-[#F8FAFC] text-[#0C3352] hover:bg-[#E2E8F0] py-2.5 text-sm font-bold transition-colors border border-[#E2E8F0]"
+                        style={{ fontFamily: M, borderRadius: '2px' }}
                       >
-                        Learn More
-                        <ArrowRight size={16} weight="bold" />
+                        Details
                       </button>
 
                       <button
                         onClick={onBookClick}
-                        className="inline-flex items-center gap-2 rounded-full bg-grad-primary-cta px-6 py-3.5 text-foreground font-extrabold text-sm shadow-md hover:brightness-105 transition-all focus:outline-none"
-                        style={{ fontFamily: M }}
+                        className="flex items-center justify-center gap-2 bg-[#0C3352] text-white hover:bg-[#0084FF] py-2.5 text-sm font-bold transition-colors"
+                        style={{ fontFamily: M, borderRadius: '2px' }}
                       >
-                        <CalendarBlank size={16} weight="bold" />
                         Book Now
+                        <ArrowRight size={16} weight="bold" />
                       </button>
                     </div>
                   </div>
-
                 </div>
-              </div>
-
-            </section>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
       </div>
 
     </div>

@@ -88,7 +88,7 @@ export const OurServicesSection: React.FC<OurServicesSectionProps> = ({ onServic
         {/* ── TOP BADGE ── */}
         <div className="flex justify-center">
           <div
-            className="inline-flex items-center gap-2 rounded-full bg-[#E8F3FF] px-4 py-1.5 text-[#0C3352] tracking-wider uppercase"
+            className="inline-flex items-center gap-2 rounded-[2px] bg-[#E8F3FF] px-4 py-1.5 text-[#0C3352] tracking-wider uppercase"
             style={{ fontFamily: M, fontSize: '11px', fontWeight: 700, lineHeight: '18px' }}
           >
             <span className="opacity-70">—</span>
@@ -136,7 +136,7 @@ export const OurServicesSection: React.FC<OurServicesSectionProps> = ({ onServic
             return (
               <div
                 key={card.id}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-[#DCEBF8] bg-white p-6 sm:p-7 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,132,255,0.08)] hover:border-[#B5D8F8] transition-all duration-300 w-[calc(100vw-32px)] sm:w-auto snap-start shrink-0 min-h-[260px] sm:min-h-[230px]"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-[2px] border border-[#DCEBF8] bg-white p-6 sm:p-7 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,132,255,0.08)] hover:border-[#B5D8F8] transition-all duration-300 w-[calc(100vw-32px)] sm:w-auto snap-start shrink-0 min-h-[260px] sm:min-h-[230px]"
               >
                 {/* ── RIGHT BACKGROUND IMAGE WITH GRADIENT BLEND ── */}
                 <div className="absolute top-0 right-0 bottom-0 w-[55%] overflow-hidden pointer-events-none select-none">
@@ -158,7 +158,7 @@ export const OurServicesSection: React.FC<OurServicesSectionProps> = ({ onServic
                 <div className="relative z-10 flex flex-col justify-between h-full max-w-[70%] sm:max-w-[52%] pr-4 sm:pr-0">
                   <div>
                     {/* Circle Icon Badge */}
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-b from-[#EBF5FF] to-[#D5E9FF] border border-[#CCE3FF] text-[#0066CC]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[2px] bg-[#F1F5F9] border border-[#E2E8F0] text-[#0066CC]">
                       <Icon size={24} weight="regular" />
                     </div>
 
@@ -211,7 +211,7 @@ export const OurServicesSection: React.FC<OurServicesSectionProps> = ({ onServic
         <div className="mt-12 flex justify-center">
           <button
             onClick={onViewAllClick}
-            className="inline-flex items-center gap-2.5 rounded-full bg-[#0C3352] text-white hover:bg-[#0084FF] px-8 py-4 text-sm font-extrabold shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none cursor-pointer"
+            className="inline-flex items-center gap-2.5 rounded-[2px] bg-[#0C3352] text-white hover:bg-[#0084FF] px-8 py-4 text-sm font-extrabold shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none cursor-pointer"
             style={{ fontFamily: M }}
           >
             See All Services

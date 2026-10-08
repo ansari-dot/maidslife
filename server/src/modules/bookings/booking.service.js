@@ -43,6 +43,7 @@ export class BookingService {
           switch (field.key) {
             case 'variant': value = data.variantId || data.variantName || (data.variants && data.variants.length > 0); break;
             case 'duration': value = data.hours; break;
+            case 'extraHours': value = data.extraHours; break;
             case 'professionals': value = data.professionalsCount; break;
             case 'cleaningMaterials': value = data.needCleaningMaterials; break;
             case 'frequency': value = data.frequency; break;
@@ -100,14 +101,23 @@ export class BookingService {
         customerObj = await query;
       }
 
-      if (!customerId && data.customerPhone) {
-        const query = Customer.findOne({ phone: data.customerPhone });
-        if (sess) query.session(sess);
-        customerObj = await query;
+      if (!customerId && (data.customerPhone || data.customerEmail)) {
+        let query;
+        if (data.customerPhone) {
+          query = Customer.findOne({ phone: data.customerPhone });
+        } else if (data.customerEmail) {
+          query = Customer.findOne({ email: data.customerEmail });
+        }
+        
+        if (query) {
+          if (sess) query.session(sess);
+          customerObj = await query;
+        }
+
         if (!customerObj) {
           const createdCustomers = await Customer.create([{
             name: data.customerName || 'Guest Customer',
-            phone: data.customerPhone,
+            phone: data.customerPhone || undefined,
             email: data.customerEmail || undefined,
           }], opts);
           customerObj = createdCustomers[0];
