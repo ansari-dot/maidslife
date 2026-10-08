@@ -16,6 +16,7 @@ export interface ServiceItem {
   name: string;
   category: 'cleaning' | 'specialized' | 'personal' | 'maintenance';
   startingPrice: number;
+  extraHourPrice?: number;
   priceUnit: string;
   duration: string;
   rating: number;

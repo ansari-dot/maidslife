@@ -52,6 +52,7 @@ export interface ServiceItem {
   description: string;
   startingPrice: number;
   extraProfessionalPrice?: number;
+  extraHourPrice?: number;
   rating: number;
   reviewsCount: number;
   image: string;

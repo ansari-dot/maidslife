@@ -65,6 +65,10 @@ const serviceSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    extraHourPrice: {
+      type: Number,
+      default: 0,
+    },
     images: [
       {
         url: String,

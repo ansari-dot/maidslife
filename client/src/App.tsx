@@ -148,16 +148,7 @@ export function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Auto-show Location Picker Modal popup on website load
-  useEffect(() => {
-    const sessionDismissed = sessionStorage.getItem('maidslife_location_dismissed');
-    if (!sessionDismissed) {
-      const timer = setTimeout(() => {
-        setIsLocationModalOpen(true);
-      }, 400);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+  // Auto-show Location Picker Modal popup on website load removed as per user request
 
   const navigate = (newPath: string, state?: any) => {
     if (newPath === '/login' || newPath === '/signup') {

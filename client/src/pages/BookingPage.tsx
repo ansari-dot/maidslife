@@ -75,6 +75,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
 
   // SERVICE DETAILS DYNAMIC STATES (From MaidsLife UI & Justlife)
   const [hours, setHours] = useState<number>(2);
+  const [extraHoursAmount, setExtraHoursAmount] = useState<number>(0);
   const [professionalsCount, setProfessionalsCount] = useState<number>(1);
   const [needCleaningMaterials, setNeedCleaningMaterials] = useState<boolean>(false);
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
@@ -334,7 +335,11 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   const proCount = isFieldEnabled('professionals') ? professionalsCount : 1;
 
   const hasVariants = Boolean(selectedService?.variants && selectedService.variants.length > 0);
+  
   const baseServicePrice = hasVariants ? 0 : (selectedService?.startingPrice || 0) * qty * hrs;
+  const extraHoursPriceCalc = (isFieldEnabled('extraHours') && selectedService?.extraHourPrice) 
+    ? (extraHoursAmount * selectedService.extraHourPrice * qty)
+    : 0;
 
   const extraProPrice = (isFieldEnabled('professionals') && selectedService?.extraProfessionalPrice)
     ? (proCount - 1) * selectedService.extraProfessionalPrice * hrs
@@ -342,7 +347,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
 
   const materialsPrice = (isFieldEnabled('cleaningMaterials') && needCleaningMaterials) ? 10 * hrs : 0;
 
-  const subtotalBeforeFreq = baseServicePrice + addonsPrice + extraProPrice + variantsPrice + materialsPrice + garmentPrice + expressFee;
+  const subtotalBeforeFreq = baseServicePrice + extraHoursPriceCalc + addonsPrice + extraProPrice + variantsPrice + materialsPrice + garmentPrice + expressFee;
 
   // Frequency Discount (Justlife style: 20% off for Weekly, 10% off for Bi-Weekly)
   const frequencyDiscountPercent = isFieldEnabled('frequency') ? (frequency === 'Weekly' ? 20 : frequency === 'Bi-Weekly' ? 10 : 0) : 0;
@@ -418,6 +423,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
       paymentMethod,
       couponCode: appliedCoupon ? appliedCoupon.code : undefined,
       hours: isFieldEnabled('duration') ? hours : undefined,
+      extraHours: isFieldEnabled('extraHours') ? extraHoursAmount : undefined,
       professionalsCount: isFieldEnabled('professionals') ? professionalsCount : undefined,
       needCleaningMaterials: isFieldEnabled('cleaningMaterials') ? needCleaningMaterials : undefined,
       frequency: isFieldEnabled('frequency') ? frequency : undefined,
@@ -975,9 +981,9 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                             </label>
                             <div className="grid grid-cols-3 gap-3">
                               {[
-                                { id: 'Bike', label: 'Motorbike', desc: 'Up to 5 kg', icon: '🛵' },
-                                { id: 'Car', label: 'Sedan Car', desc: 'Up to 50 kg', icon: '🚗' },
-                                { id: 'Van', label: 'Cargo Van', desc: 'Up to 500 kg', icon: '🚚' },
+                                { id: 'Sedan', label: 'Sedan / Hatch', desc: 'Standard Car', icon: '🚗' },
+                                { id: 'SUV', label: 'SUV / 4x4', desc: 'Large Vehicle', icon: '🚙' },
+                                { id: 'Luxury', label: 'Luxury / Sports', desc: 'Special Handling', icon: '🏎️' },
                               ].map((veh) => {
                                 const isSelected = vehicleType === veh.id;
                                 return (
@@ -1072,6 +1078,37 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           <button
                             type="button"
                             onClick={() => setHours(Math.min(8, hours + 1))}
+                            className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-[#00D1FF] hover:bg-slate-50 transition-all cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Extra Hours Counter (Pick & Drop / Specific) */}
+                    {isFieldEnabled('extraHours') && (
+                      <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                        <div>
+                          <label className="block text-[#0C3352] text-[16px] font-extrabold m-0 mb-0.5" style={{ fontFamily: M }}>
+                            {getFieldLabel('extraHours', 'Extra Waiting Hours')}
+                          </label>
+                          <p className="text-slate-500 text-xs" style={{ fontFamily: M }}>
+                            {selectedService?.extraHourPrice ? `(+AED ${selectedService.extraHourPrice}/extra hr)` : 'Add extra waiting or service hours'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => setExtraHoursAmount(Math.max(0, extraHoursAmount - 1))}
+                            className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <span className="text-[18px] font-extrabold text-[#0C3352] w-4 text-center" style={{ fontFamily: M }}>{extraHoursAmount}</span>
+                          <button
+                            type="button"
+                            onClick={() => setExtraHoursAmount(Math.min(12, extraHoursAmount + 1))}
                             className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-xl text-[#00D1FF] hover:bg-slate-50 transition-all cursor-pointer"
                           >
                             +
@@ -1683,6 +1720,15 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     <div className="flex justify-between items-start text-slate-500">
                       <span>Duration (Hours)</span>
                       <span className="font-bold text-[#0C3352]">{hours} Hour(s)</span>
+                    </div>
+                  )}
+
+                  {isFieldEnabled('extraHours') && extraHoursAmount > 0 && (
+                    <div className="flex justify-between items-start text-slate-500">
+                      <span>Extra Waiting Hours</span>
+                      <span className="font-bold text-[#0C3352]">
+                        {extraHoursAmount} hr(s) {extraHoursPriceCalc > 0 ? `(+AED ${extraHoursPriceCalc})` : ''}
+                      </span>
                     </div>
                   )}
 

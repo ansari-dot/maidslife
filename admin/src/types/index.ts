@@ -35,6 +35,7 @@ export interface ServiceItem {
   description: string;
   startingPrice: number;
   extraProfessionalPrice?: number;
+  extraHourPrice?: number;
   image: string;
   iconName: string;
   features: string[];

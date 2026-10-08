@@ -21,6 +21,7 @@ import { FileUploadInput } from '../common/FileUploadInput';
 
 const ALL_POSSIBLE_FIELDS = [
   { key: 'duration', label: 'Duration (Hours)' },
+  { key: 'extraHours', label: 'Extra Waiting Hours' },
   { key: 'professionals', label: 'Professionals' },
   { key: 'cleaningMaterials', label: 'Cleaning Materials' },
   { key: 'frequency', label: 'Service Frequency (Recurring Plans)' },
@@ -61,14 +62,15 @@ function getPresetFields(type: BookingType): BookingFieldConfig[] {
       ];
     case 'DELIVERY':
       return [
-        { key: 'pickupLocation', label: 'Pickup Location', enabled: true, required: true, order: 1 },
-        { key: 'dropoffLocation', label: 'Drop-off Location', enabled: true, required: true, order: 2 },
-        { key: 'vehicleType', label: 'Vehicle Type', enabled: true, required: true, order: 3 },
-        { key: 'driver', label: 'Driver / Resource', enabled: true, required: false, order: 4 },
-        { key: 'quantity', label: 'Item / Quantity', enabled: true, required: false, order: 5 },
+        { key: 'pickupLocation', label: 'Car Pickup Location', enabled: true, required: true, order: 1 },
+        { key: 'dropoffLocation', label: 'Car Drop-off / Garage Destination', enabled: true, required: true, order: 2 },
+        { key: 'vehicleType', label: 'Vehicle / Car Type', enabled: true, required: true, order: 3 },
+        { key: 'driver', label: 'Chauffeur / Driver Option', enabled: true, required: false, order: 4 },
+        { key: 'quantity', label: 'Cars / Quantity', enabled: true, required: false, order: 5 },
         { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 6 },
         { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 7 },
-        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 8 },
+        { key: 'extraHours', label: 'Extra Waiting Hours', enabled: true, required: false, order: 8 },
+        { key: 'specialInstructions', label: 'Special Instructions for Car Service', enabled: true, required: false, order: 9 },
       ];
     case 'CLEANING':
     default:
@@ -109,6 +111,7 @@ export const ServicesView: React.FC = () => {
   const [description, setDescription] = useState('');
   const [startingPrice, setStartingPrice] = useState<number>(120);
   const [extraProfessionalPrice, setExtraProfessionalPrice] = useState<number>(0);
+  const [extraHourPrice, setExtraHourPrice] = useState<number>(0);
   const [image, setImage] = useState('');
   const [iconName, setIconName] = useState('Sparkles');
   const [features, setFeatures] = useState<string[]>([]);
@@ -128,6 +131,7 @@ export const ServicesView: React.FC = () => {
     setDescription('');
     setStartingPrice(120);
     setExtraProfessionalPrice(0);
+    setExtraHourPrice(0);
     setImage('');
     setIconName('Sparkles');
     setFeatures([]);
@@ -149,6 +153,7 @@ export const ServicesView: React.FC = () => {
     setDescription(srv.description || '');
     setStartingPrice(srv.startingPrice);
     setExtraProfessionalPrice(srv.extraProfessionalPrice || 0);
+    setExtraHourPrice(srv.extraHourPrice || 0);
     setImage(srv.image || '');
     setIconName(srv.iconName || 'Sparkles');
     setFeatures(srv.features || []);
@@ -238,6 +243,7 @@ export const ServicesView: React.FC = () => {
       description: description.trim(),
       startingPrice: Number(startingPrice),
       extraProfessionalPrice: Number(extraProfessionalPrice),
+      extraHourPrice: Number(extraHourPrice),
       image,
       iconName,
       features,
@@ -479,7 +485,7 @@ export const ServicesView: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             {/* Slug */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -512,13 +518,26 @@ export const ServicesView: React.FC = () => {
             {/* Extra Professional Price */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Extra Professional (AED)
+                Extra Pro (AED)
               </label>
               <input
                 type="number"
                 min={0}
                 value={extraProfessionalPrice}
                 onChange={(e) => setExtraProfessionalPrice(Number(e.target.value))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+              />
+            </div>
+            {/* Extra Hour Price */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Extra Hour (AED)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={extraHourPrice}
+                onChange={(e) => setExtraHourPrice(Number(e.target.value))}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
               />
             </div>

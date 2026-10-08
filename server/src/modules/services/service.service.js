@@ -27,14 +27,15 @@ export function getDefaultBookingFields(bookingType = 'CLEANING') {
       ];
     case 'DELIVERY':
       return [
-        { key: 'pickupLocation', label: 'Pickup Location', enabled: true, required: true, order: 1 },
-        { key: 'dropoffLocation', label: 'Drop-off Location', enabled: true, required: true, order: 2 },
-        { key: 'vehicleType', label: 'Vehicle Type', enabled: true, required: true, order: 3 },
-        { key: 'driver', label: 'Driver / Resource', enabled: true, required: false, order: 4 },
-        { key: 'quantity', label: 'Item / Quantity', enabled: true, required: false, order: 5 },
+        { key: 'pickupLocation', label: 'Car Pickup Location', enabled: true, required: true, order: 1 },
+        { key: 'dropoffLocation', label: 'Car Drop-off / Garage Destination', enabled: true, required: true, order: 2 },
+        { key: 'vehicleType', label: 'Vehicle / Car Type', enabled: true, required: true, order: 3 },
+        { key: 'driver', label: 'Chauffeur / Driver Option', enabled: true, required: false, order: 4 },
+        { key: 'quantity', label: 'Cars / Quantity', enabled: true, required: false, order: 5 },
         { key: 'date', label: 'Pickup Date', enabled: true, required: true, order: 6 },
         { key: 'time', label: 'Pickup Time', enabled: true, required: true, order: 7 },
-        { key: 'specialInstructions', label: 'Special Instructions', enabled: true, required: false, order: 8 },
+        { key: 'extraHours', label: 'Extra Waiting Hours', enabled: true, required: false, order: 8 },
+        { key: 'specialInstructions', label: 'Special Instructions for Car Service', enabled: true, required: false, order: 9 },
       ];
     case 'CLEANING':
     default:
