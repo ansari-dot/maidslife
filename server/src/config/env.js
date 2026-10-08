@@ -24,6 +24,7 @@ const envSchema = z.object({
   ZIINA_API_KEY: z.string().optional(),
   ZIINA_PROD_API_KEY: z.string().optional(),
   ZIINA_WEBHOOK_SECRET: z.string().optional(),
+  ADMIN_EMAIL: z.string().optional(),
 });
 
 const _env = envSchema.safeParse(process.env);

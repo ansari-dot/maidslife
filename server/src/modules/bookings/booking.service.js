@@ -4,7 +4,6 @@ import { Customer } from '../customers/customer.model.js';
 import { Cleaner } from '../cleaners/cleaner.model.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { getPaginationOptions, getPaginationMeta } from '../../utils/pagination.js';
-import { sendEmail } from '../../config/mailer.js';
 
 import { Coupon } from '../coupons/coupon.model.js';
 

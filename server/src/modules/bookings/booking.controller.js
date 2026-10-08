@@ -1,9 +1,17 @@
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { ApiResponse } from '../../utils/ApiResponse.js';
 import { BookingService } from './booking.service.js';
+import { EmailService } from '../../utils/email.service.js';
 
 export const createBooking = asyncHandler(async (req, res) => {
   const { booking, paymentUrl } = await BookingService.createBooking(req.body);
+
+  try {
+    const fullBooking = await BookingService.getBookingById(booking._id);
+    await EmailService.sendBookingConfirmationEmails(fullBooking);
+  } catch (err) {
+    console.error('Failed to send booking emails:', err);
+  }
 
   // Custom response to include paymentUrl outside or inside data
   return res.status(201).json({
