@@ -34,6 +34,13 @@ const settingsSchema = new mongoose.Schema(
       passwordMinLength: { type: Number, default: 6 },
       sessionTimeoutMinutes: { type: Number, default: 15 },
     },
+    announcement: {
+      isActive: { type: Boolean, default: false },
+      text: { type: String, default: 'Welcome to Maidslife Home Services!' },
+      link: { type: String, default: '' },
+      bgColor: { type: String, default: '#0C3352' },
+      textColor: { type: String, default: '#FFFFFF' },
+    },
   },
   {
     timestamps: true,

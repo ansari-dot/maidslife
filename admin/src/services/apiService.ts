@@ -447,6 +447,13 @@ export const apiService = {
     });
     return data;
   },
+  async updateAnnouncementSettings(updates: any): Promise<any> {
+    const data = await request<any>('/settings/announcement', {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+    return data;
+  },
 
   // --- TESTIMONIALS ---
   async getTestimonials(): Promise<Testimonial[]> {

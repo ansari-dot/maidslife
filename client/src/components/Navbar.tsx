@@ -9,6 +9,7 @@ import {
   MapPin,
 } from '@phosphor-icons/react';
 import { LocationData } from './LocationModal';
+import { AnnouncementBar } from './AnnouncementBar';
 
 interface NavbarProps {
   onBookClick?: () => void;
@@ -64,8 +65,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     /* pill navbar — sticky so it floats over hero on scroll, bg-bg fills gap behind it */
-    <header className="px-4 sm:px-8 pt-5 pb-3">
-      <div className="max-w-[1280px] mx-auto bg-white/70 backdrop-blur-md rounded-full shadow-[0_4px_28px_rgba(12,51,82,0.10)] border border-white/60 px-5 sm:px-7 py-3 flex items-center justify-between gap-4">
+    <header className="w-full flex flex-col">
+      <AnnouncementBar />
+      <div className="px-4 sm:px-8 pt-5 pb-3">
+        <div className="max-w-[1280px] mx-auto bg-white/70 backdrop-blur-md rounded-full shadow-[0_4px_28px_rgba(12,51,82,0.10)] border border-white/60 px-5 sm:px-7 py-3 flex items-center justify-between gap-4">
 
         {/* ── LOGO ── */}
         <button onClick={() => handleLinkClick('Home')} className="shrink-0 select-none text-left focus:outline-none cursor-pointer">
@@ -273,6 +276,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
       )}
+      </div>
     </header>
   );
 };

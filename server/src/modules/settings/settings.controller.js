@@ -26,3 +26,8 @@ export const updateSecuritySettings = asyncHandler(async (req, res) => {
   const settings = await SettingsService.updateSettingsSection('security', req.body);
   return res.status(200).json(new ApiResponse(200, settings, 'Security settings updated'));
 });
+
+export const updateAnnouncementSettings = asyncHandler(async (req, res) => {
+  const settings = await SettingsService.updateSettingsSection('announcement', req.body);
+  return res.status(200).json(new ApiResponse(200, settings, 'Announcement settings updated'));
+});

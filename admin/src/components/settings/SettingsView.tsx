@@ -13,8 +13,10 @@ import {
   Lock,
   Mail,
   User,
+  Megaphone,
 } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
+import { apiService } from '../../services/apiService';
 
 export const SettingsView: React.FC = () => {
   const { auditLogs, resetToFactoryDefaults, notify, currentRole, currentUser } = useAdmin();
@@ -36,9 +38,51 @@ export const SettingsView: React.FC = () => {
     Sharjah: true,
   });
 
+  // Announcement State
+  const [announcementIsActive, setAnnouncementIsActive] = useState(false);
+  const [announcementText, setAnnouncementText] = useState('Welcome to Maidslife Home Services!');
+  const [announcementLink, setAnnouncementLink] = useState('');
+  const [announcementBgColor, setAnnouncementBgColor] = useState('#0C3352');
+  const [announcementTextColor, setAnnouncementTextColor] = useState('#FFFFFF');
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await apiService.getSettings();
+        if ((data as any).announcement) {
+          const ann = (data as any).announcement;
+          setAnnouncementIsActive(ann.isActive);
+          setAnnouncementText(ann.text || '');
+          setAnnouncementLink(ann.link || '');
+          setAnnouncementBgColor(ann.bgColor || '#0C3352');
+          setAnnouncementTextColor(ann.textColor || '#FFFFFF');
+        }
+      } catch (err) {
+        console.error('Failed to fetch settings', err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     notify('Platform operating configurations updated successfully', 'success');
+  };
+
+  const handleSaveAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await apiService.updateAnnouncementSettings({
+        isActive: announcementIsActive,
+        text: announcementText,
+        link: announcementLink,
+        bgColor: announcementBgColor,
+        textColor: announcementTextColor,
+      });
+      notify('Announcement settings updated successfully', 'success');
+    } catch (error) {
+      notify('Failed to update announcement settings', 'error');
+    }
   };
 
   const handleSaveAccount = (e: React.FormEvent) => {
@@ -260,6 +304,87 @@ export const SettingsView: React.FC = () => {
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition"
                 >
                   Update Account Details
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 mt-6">
+            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-4">
+              <Megaphone className="w-4 h-4 text-sky-600" />
+              Announcement Bar
+            </h3>
+            
+            <form onSubmit={handleSaveAnnouncement} className="space-y-4">
+              <div className="flex items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={announcementIsActive}
+                  onChange={(e) => setAnnouncementIsActive(e.target.checked)}
+                  className="w-4 h-4 text-sky-600 rounded"
+                />
+                <label className="text-xs font-semibold text-slate-700 cursor-pointer" onClick={() => setAnnouncementIsActive(!announcementIsActive)}>
+                  Enable Announcement Bar
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Announcement Text
+                </label>
+                <input
+                  type="text"
+                  value={announcementText}
+                  onChange={(e) => setAnnouncementText(e.target.value)}
+                  placeholder="e.g. Special offer! Get 20% off your first booking."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Optional Link (URL)
+                </label>
+                <input
+                  type="url"
+                  value={announcementLink}
+                  onChange={(e) => setAnnouncementLink(e.target.value)}
+                  placeholder="https://maidslife.ae/services"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Background Color
+                  </label>
+                  <input
+                    type="color"
+                    value={announcementBgColor}
+                    onChange={(e) => setAnnouncementBgColor(e.target.value)}
+                    className="w-full h-9 bg-slate-50 border border-slate-200 rounded-xl px-1 py-1 cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Text Color
+                  </label>
+                  <input
+                    type="color"
+                    value={announcementTextColor}
+                    onChange={(e) => setAnnouncementTextColor(e.target.value)}
+                    className="w-full h-9 bg-slate-50 border border-slate-200 rounded-xl px-1 py-1 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition"
+                >
+                  Save Announcement
                 </button>
               </div>
             </form>
