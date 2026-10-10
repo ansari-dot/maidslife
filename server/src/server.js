@@ -1,4 +1,5 @@
 import app from './app.js';
+import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 import { env } from './config/env.js';
 
@@ -8,15 +9,21 @@ const startServer = async () => {
   // Connect to MongoDB
   await connectDB();
 
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Maidslife Backend Server running in [${env.NODE_ENV}] mode on http://localhost:${PORT}`);
   });
 
   // Graceful Shutdown
   const gracefulShutdown = (signal) => {
     console.log(`\n⚠️ Received ${signal}. Shutting down HTTP server gracefully...`);
-    server.close(() => {
-      console.log('🛑 HTTP server closed. Exiting process.');
+    server.close(async () => {
+      console.log('🛑 HTTP server closed.');
+      try {
+        await mongoose.connection.close(false);
+        console.log('📦 MongoDB connection closed gracefully.');
+      } catch (err) {
+        console.error('Error closing MongoDB connection:', err);
+      }
       process.exit(0);
     });
   };

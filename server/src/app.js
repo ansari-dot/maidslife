@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import mongoose from 'mongoose';
 import { fileURLToPath } from 'url';
 import { SitemapStream, streamToPromise } from 'sitemap';
 
@@ -41,6 +42,20 @@ const app = express();
 app.set('trust proxy', 1); // Trust first proxy (Nginx) to fetch real IP
 app.use(morgan('dev'));
 
+// X-Response-Time latency tracking header
+app.use((req, res, next) => {
+  const start = Date.now();
+  const originalWriteHead = res.writeHead;
+  res.writeHead = function (...args) {
+    if (!res.headersSent) {
+      const duration = Date.now() - start;
+      res.setHeader('X-Response-Time', `${duration}ms`);
+    }
+    return originalWriteHead.apply(this, args);
+  };
+  next();
+});
+
 // 1. Global Security & Parsing Middleware
 app.use(
   helmet({
@@ -73,13 +88,29 @@ app.use(apiLimiter);
 // 3. Swagger API Documentation UI Endpoint
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// 4. Healthcheck Endpoint
+// 4. Enterprise Healthcheck & Readiness Probe (Liveness & Database State)
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'online',
+  const isDbConnected = mongoose.connection.readyState === 1;
+  const dbStatus = isDbConnected ? 'connected' : 'disconnected';
+  const memoryUsage = process.memoryUsage();
+
+  const healthData = {
+    status: isDbConnected ? 'healthy' : 'degraded',
+    database: dbStatus,
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  });
+    uptimeSeconds: Math.floor(process.uptime()),
+    memory: {
+      rssMb: Math.round(memoryUsage.rss / 1024 / 1024),
+      heapUsedMb: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+    },
+    version: '1.0.0',
+    environment: env.NODE_ENV || 'production',
+  };
+
+  if (!isDbConnected) {
+    return res.status(503).json(healthData);
+  }
+  return res.status(200).json(healthData);
 });
 
 // Sitemap Endpoint

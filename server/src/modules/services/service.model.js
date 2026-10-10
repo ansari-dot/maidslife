@@ -129,5 +129,7 @@ const serviceSchema = new mongoose.Schema(
 );
 
 serviceSchema.index({ category: 1, isActive: 1 });
+serviceSchema.index({ isActive: 1, createdAt: -1 });
+serviceSchema.index({ name: 'text', description: 'text', tagline: 'text' });
 
 export const Service = mongoose.model('Service', serviceSchema);

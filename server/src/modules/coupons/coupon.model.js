@@ -60,4 +60,7 @@ const couponSchema = new mongoose.Schema(
   }
 );
 
+couponSchema.index({ code: 1, isActive: 1, expiresAt: 1 });
+couponSchema.index({ isDisplayedOnCheckout: 1, isActive: 1 });
+
 export const Coupon = mongoose.model('Coupon', couponSchema);

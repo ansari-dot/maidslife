@@ -21,9 +21,8 @@ const paymentSchema = new mongoose.Schema(
     },
     providerPaymentId: {
       type: String,
-      sparse: true, // Sparse unique index because it might not be there initially or we might want uniqueness only if present
+      sparse: true,
       unique: true,
-      index: true,
     },
     amount: {
       type: Number,
@@ -61,7 +60,6 @@ const paymentSchema = new mongoose.Schema(
   }
 );
 
-paymentSchema.index({ providerPaymentId: 1 }, { unique: true, sparse: true });
-paymentSchema.index({ status: 1 });
+paymentSchema.index({ customerId: 1, createdAt: -1 });
 
 export const Payment = mongoose.model('Payment', paymentSchema);

@@ -14,6 +14,47 @@ const fetchApi = async (url: string, options: RequestInit = {}): Promise<Respons
   });
 };
 
+// High-Performance In-Memory Cache & Request Deduplicator (Enterprise Grade)
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const memoryCache = new Map<string, CacheEntry<any>>();
+const inFlightRequests = new Map<string, Promise<any>>();
+const DEFAULT_TTL_MS = 60 * 1000; // 60 seconds
+
+async function cachedFetch<T>(
+  key: string,
+  fetchFn: () => Promise<T>,
+  ttlMs: number = DEFAULT_TTL_MS
+): Promise<T> {
+  const cached = memoryCache.get(key);
+  const now = Date.now();
+  if (cached && now - cached.timestamp < ttlMs) {
+    return cached.data;
+  }
+
+  // Deduplicate concurrent parallel in-flight requests
+  if (inFlightRequests.has(key)) {
+    return inFlightRequests.get(key)!;
+  }
+
+  const promise = fetchFn()
+    .then((data) => {
+      memoryCache.set(key, { data, timestamp: Date.now() });
+      inFlightRequests.delete(key);
+      return data;
+    })
+    .catch((err) => {
+      inFlightRequests.delete(key);
+      throw err;
+    });
+
+  inFlightRequests.set(key, promise);
+  return promise;
+}
+
 export function getDefaultBookingFields(bookingType: string = 'CLEANING') {
   switch (bookingType) {
     case 'LAUNDRY':
@@ -118,72 +159,92 @@ const mapBackendServiceToClient = (svc: any): ServiceItem => {
 };
 
 export const clientApi = {
-  // 1. Fetch All Services (Dynamic with fallback)
+  // Clear in-memory cache helper
+  clearCache(keyPrefix?: string) {
+    if (!keyPrefix) {
+      memoryCache.clear();
+      inFlightRequests.clear();
+      return;
+    }
+    for (const key of memoryCache.keys()) {
+      if (key.startsWith(keyPrefix)) memoryCache.delete(key);
+    }
+  },
+
+  // 1. Fetch All Services (Dynamic with high-performance cache)
   async getServices(params?: { category?: string; search?: string }): Promise<ServiceItem[]> {
-    try {
-      const baseUrl = API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`;
-      const url = new URL(`${baseUrl}/services`);
-      if (params?.category) url.searchParams.append('category', params.category);
-      if (params?.search) url.searchParams.append('search', params.search);
+    const cacheKey = `services_${params?.category || 'all'}_${params?.search || ''}`;
+    return cachedFetch(cacheKey, async () => {
+      try {
+        const baseUrl = API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`;
+        const url = new URL(`${baseUrl}/services`);
+        if (params?.category) url.searchParams.append('category', params.category);
+        if (params?.search) url.searchParams.append('search', params.search);
 
-      const res = await fetch(url.toString());
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const res = await fetch(url.toString());
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
-      const json = await res.json();
-      const rawServices = json.data || json;
+        const json = await res.json();
+        const rawServices = json.data || json;
 
-      if (Array.isArray(rawServices)) {
-        return rawServices.map(mapBackendServiceToClient);
+        if (Array.isArray(rawServices)) {
+          return rawServices.map(mapBackendServiceToClient);
+        }
+      } catch (err) {
+        console.warn('Backend API unavailable or empty:', err);
       }
-    } catch (err) {
-      console.warn('Backend API unavailable or empty:', err);
-    }
-    return [];
+      return [];
+    });
   },
 
-  // 2. Fetch Single Service by ID or Slug (Dynamic with fallback)
+  // 2. Fetch Single Service by ID or Slug (Dynamic with high-performance cache)
   async getServiceById(idOrSlug: string): Promise<ServiceItem> {
-    try {
-      const res = await fetch(`${API_BASE}/services/${idOrSlug}`);
-      if (res.ok) {
-        const json = await res.json();
-        const svc = json.data || json;
-        if (svc) {
-          return mapBackendServiceToClient(svc);
+    const cacheKey = `service_${idOrSlug}`;
+    return cachedFetch(cacheKey, async () => {
+      try {
+        const res = await fetch(`${API_BASE}/services/${idOrSlug}`);
+        if (res.ok) {
+          const json = await res.json();
+          const svc = json.data || json;
+          if (svc) {
+            return mapBackendServiceToClient(svc);
+          }
+        } else {
+          throw new Error('Service not found in database');
         }
-      } else {
-        throw new Error('Service not found in database');
+      } catch (err) {
+        console.warn(`Error fetching service '${idOrSlug}' from backend:`, err);
+        throw err;
       }
-    } catch (err) {
-      console.warn(`Error fetching service '${idOrSlug}' from backend:`, err);
-      throw err;
-    }
-    throw new Error('Service not found');
+      throw new Error('Service not found');
+    });
   },
 
-  // 3. Fetch Categories
+  // 3. Fetch Categories (Cached)
   async getCategories(): Promise<ServiceCategory[]> {
-    try {
-      const res = await fetch(`${API_BASE}/categories`);
-      if (res.ok) {
-        const json = await res.json();
-        const cats = json.data || json;
-        if (Array.isArray(cats)) {
-          return cats.map((c: any) => ({
-            id: c._id || c.id,
-            name: c.name,
-            slug: c.slug,
-            description: c.description || '',
-            iconName: c.iconName || c.icon || 'House',
-            icon: c.icon || c.iconName || 'House',
-            image: c.image || '',
-          }));
+    return cachedFetch('categories', async () => {
+      try {
+        const res = await fetch(`${API_BASE}/categories`);
+        if (res.ok) {
+          const json = await res.json();
+          const cats = json.data || json;
+          if (Array.isArray(cats)) {
+            return cats.map((c: any) => ({
+              id: c._id || c.id,
+              name: c.name,
+              slug: c.slug,
+              description: c.description || '',
+              iconName: c.iconName || c.icon || 'House',
+              icon: c.icon || c.iconName || 'House',
+              image: c.image || '',
+            }));
+          }
         }
+      } catch (err) {
+        console.warn('Error fetching categories from backend:', err);
       }
-    } catch (err) {
-      console.warn('Error fetching categories from backend:', err);
-    }
-    return [];
+      return [];
+    });
   },
 
   // 4. Create Booking
@@ -361,52 +422,58 @@ export const clientApi = {
     return null;
   },
 
-  // 7. Fetch Testimonials
+  // 7. Fetch Testimonials (Cached)
   async getTestimonials(): Promise<any[]> {
-    try {
-      const res = await fetch(`${API_BASE}/testimonials`);
-      if (res.ok) {
-        const json = await res.json();
-        const data = json.data || json;
-        if (Array.isArray(data)) {
-          return data;
+    return cachedFetch('testimonials', async () => {
+      try {
+        const res = await fetch(`${API_BASE}/testimonials`);
+        if (res.ok) {
+          const json = await res.json();
+          const data = json.data || json;
+          if (Array.isArray(data)) {
+            return data;
+          }
         }
+      } catch (err) {
+        console.warn('Error fetching testimonials from backend:', err);
       }
-    } catch (err) {
-      console.warn('Error fetching testimonials from backend:', err);
-    }
-    return [];
+      return [];
+    });
   },
 
-  // 8. Fetch Team Members
+  // 8. Fetch Team Members (Cached)
   async getTeamMembers(): Promise<any[]> {
-    try {
-      const res = await fetch(`${API_BASE}/teams`);
-      if (res.ok) {
-        const json = await res.json();
-        const data = json.data || json;
-        if (Array.isArray(data)) {
-          return data;
+    return cachedFetch('teams', async () => {
+      try {
+        const res = await fetch(`${API_BASE}/teams`);
+        if (res.ok) {
+          const json = await res.json();
+          const data = json.data || json;
+          if (Array.isArray(data)) {
+            return data;
+          }
         }
+      } catch (err) {
+        console.warn('Error fetching team members from backend:', err);
       }
-    } catch (err) {
-      console.warn('Error fetching team members from backend:', err);
-    }
-    return [];
+      return [];
+    });
   },
 
-  // 9. Fetch Marketing Settings
+  // 9. Fetch Marketing Settings (Cached)
   async getMarketingSettings(): Promise<any> {
-    try {
-      const res = await fetch(`${API_BASE}/settings`);
-      if (res.ok) {
-        const json = await res.json();
-        return json.data || null;
+    return cachedFetch('marketing_settings', async () => {
+      try {
+        const res = await fetch(`${API_BASE}/settings`);
+        if (res.ok) {
+          const json = await res.json();
+          return json.data || null;
+        }
+      } catch (err) {
+        // Quiet fallback if marketing endpoint is not present
       }
-    } catch (err) {
-      // Quiet fallback if marketing endpoint is not present
-    }
-    return null;
+      return null;
+    });
   },
 
   // 10. AUTH & USER MANAGEMENT (Backend Secure HttpOnly Cookie Auth)
