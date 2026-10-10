@@ -25,7 +25,15 @@ const variantSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true,
-  }
+  },
+  allowMultiple: {
+    type: Boolean,
+    default: false,
+  },
+  unit: {
+    type: String,
+    default: '',
+  },
 });
 
 const serviceSchema = new mongoose.Schema(

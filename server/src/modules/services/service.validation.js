@@ -33,6 +33,8 @@ export const createServiceSchema = z.object({
         price: z.number().min(0).optional(),
         image: z.string().optional(),
         isActive: z.boolean().optional(),
+        allowMultiple: z.boolean().optional(),
+        unit: z.string().optional(),
       })
     ).optional(),
   }),
@@ -63,6 +65,8 @@ export const updateServiceSchema = z.object({
         price: z.number().min(0).optional(),
         image: z.string().optional(),
         isActive: z.boolean().optional(),
+        allowMultiple: z.boolean().optional(),
+        unit: z.string().optional(),
       })
     ).optional(),
   }),

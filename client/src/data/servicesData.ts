@@ -8,6 +8,8 @@ export interface ServiceVariant {
   description?: string;
   image?: string;
   isActive?: boolean;
+  allowMultiple?: boolean;
+  unit?: string;
 }
 
 export interface ServiceAddon {
@@ -123,6 +125,8 @@ export const SERVICES_DATA: ServiceItem[] = [
         originalPrice: 399,
         duration: '2 Hours',
         description: 'Perfect for compact studio apartments. 1 Maid for 2 hours.',
+        allowMultiple: false,
+        unit: '/ visit',
       },
       {
         id: 'hc-1br',
@@ -131,6 +135,8 @@ export const SERVICES_DATA: ServiceItem[] = [
         originalPrice: 449,
         duration: '2.5 Hours',
         description: 'Comprehensive cleaning for 1BR. 1 Maid for 2.5 hours.',
+        allowMultiple: false,
+        unit: '/ visit',
       },
       {
         id: 'hc-2br',
@@ -139,6 +145,8 @@ export const SERVICES_DATA: ServiceItem[] = [
         originalPrice: 599,
         duration: '3.5 Hours',
         description: 'Complete detail clean for 2BR homes. 2 Maids for 2 hours.',
+        allowMultiple: false,
+        unit: '/ visit',
       },
       {
         id: 'hc-3br-villa',
@@ -147,6 +155,8 @@ export const SERVICES_DATA: ServiceItem[] = [
         originalPrice: 849,
         duration: '5 Hours',
         description: 'Full multi-story home clean. 2 Maids for 4 hours.',
+        allowMultiple: false,
+        unit: '/ visit',
       },
     ],
     addons: [
@@ -300,27 +310,13 @@ export const SERVICES_DATA: ServiceItem[] = [
     variants: [
       {
         id: 'ac-1unit',
-        name: 'Split AC (1 Unit)',
+        name: 'Split AC Unit Deep Clean',
         price: 150,
         originalPrice: 220,
         duration: '1 Hour',
         description: 'Complete indoor & outdoor unit wash for 1 Split AC.',
-      },
-      {
-        id: 'ac-2units',
-        name: 'Split AC (2 Units)',
-        price: 270,
-        originalPrice: 400,
-        duration: '1.5 Hours',
-        description: 'Full service for 2 Split AC units.',
-      },
-      {
-        id: 'ac-3units',
-        name: 'Split AC (3 Units)',
-        price: 380,
-        originalPrice: 550,
-        duration: '2 Hours',
-        description: 'Full service for 3 Split AC units.',
+        allowMultiple: true,
+        unit: '/ pc',
       },
       {
         id: 'ac-central-duct',
@@ -329,6 +325,8 @@ export const SERVICES_DATA: ServiceItem[] = [
         originalPrice: 700,
         duration: '3 Hours',
         description: 'Complete duct camera inspection & air fogging.',
+        allowMultiple: true,
+        unit: '/ unit',
       },
     ],
     addons: [

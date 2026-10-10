@@ -50,6 +50,8 @@ export interface ServiceItem {
     price: number;
     image?: string;
     isActive: boolean;
+    allowMultiple?: boolean;
+    unit?: string;
   }[];
 }
 

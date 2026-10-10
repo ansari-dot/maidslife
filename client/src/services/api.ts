@@ -98,6 +98,8 @@ const mapBackendServiceToClient = (svc: any): ServiceItem => {
         price: v.price,
         image: v.image || '',
         isActive: v.isActive !== false,
+        allowMultiple: Boolean(v.allowMultiple),
+        unit: v.unit || '',
       }))
       : [],
 

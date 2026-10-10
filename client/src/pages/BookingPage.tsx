@@ -400,10 +400,14 @@ export const BookingPage: React.FC<BookingPageProps> = ({
           name: v.name,
           quantity: variantQuantities[v.id || (v as any)._id] || 0,
           price: v.price,
+          unit: v.unit || '',
+          allowMultiple: Boolean(v.allowMultiple),
         }))
       : [];
 
-    const variantNameStr = selectedVariantsList.map((v) => `${v.name} (x${v.quantity})`).join(', ');
+    const variantNameStr = selectedVariantsList
+      .map((v) => (v.allowMultiple ? `${v.name} (x${v.quantity}${v.unit ? ' ' + v.unit : ''})` : `${v.name}${v.unit ? ' (' + v.unit.trim() + ')' : ''}`))
+      .join(', ');
 
     const bookingPayload = {
       service: selectedService?.id,
@@ -676,20 +680,39 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           const vId = v.id || (v as any)._id;
                           const qty = variantQuantities[vId] || 0;
                           const isSelected = qty > 0;
+                          const isMultiple = Boolean(v.allowMultiple);
+                          const formatUnit = (u?: string) => {
+                            if (!u || !u.trim()) return '';
+                            const clean = u.trim();
+                            if (clean.startsWith('/')) return clean;
+                            if (/^per\s+/i.test(clean)) return `/ ${clean.replace(/^per\s+/i, '')}`;
+                            return `/ ${clean}`;
+                          };
+                          const unitLabel = formatUnit(v.unit);
 
                           return (
                             <div
                               key={vId}
                               onClick={() => {
-                                setVariantQuantities((prev) => ({
-                                  ...prev,
-                                  [vId]: (prev[vId] || 0) > 0 ? 0 : 1,
-                                }));
+                                if (isMultiple) {
+                                  if (qty === 0) {
+                                    setVariantQuantities((prev) => ({
+                                      ...prev,
+                                      [vId]: 1,
+                                    }));
+                                  }
+                                } else {
+                                  setVariantQuantities((prev) => ({
+                                    ...prev,
+                                    [vId]: (prev[vId] || 0) > 0 ? 0 : 1,
+                                  }));
+                                }
                               }}
-                              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${isSelected
-                                ? 'bg-[#E8F3FF] border-[#0084FF] shadow-xs ring-1 ring-[#0084FF]'
-                                : 'bg-white border-slate-200 hover:border-slate-300'
-                                }`}
+                              className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between gap-3 ${
+                                isSelected
+                                  ? 'bg-[#F2F8FF] border-[#0084FF] shadow-xs ring-1 ring-[#0084FF]'
+                                  : 'bg-white border-slate-200 hover:border-slate-300'
+                              } ${isMultiple && qty > 0 ? '' : 'cursor-pointer'}`}
                             >
                               <div className="flex items-center gap-3 w-full">
                                 {v.image && (
@@ -701,54 +724,92 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                   </span>
                                   {v.price > 0 ? (
                                     <span className="text-[11px] font-bold text-[#0084FF] block mt-0.5" style={{ fontFamily: M }}>
-                                      AED {v.price}
+                                      AED {v.price} {unitLabel}
                                     </span>
                                   ) : (
                                     <span className="text-[11px] font-semibold text-slate-400 block mt-0.5" style={{ fontFamily: M }}>
-                                      Included
+                                      Included {unitLabel}
                                     </span>
                                   )}
                                 </div>
                               </div>
 
-                              {/* INDIVIDUAL VARIANT QUANTITY COUNTER */}
-                              <div
-                                className="flex items-center justify-between pt-2 border-t border-slate-200/60"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <span className="text-[11px] font-bold text-slate-500" style={{ fontFamily: M }}>
-                                  {qty > 0 ? `${qty} Selected` : 'Quantity'}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setVariantQuantities((prev) => ({
-                                        ...prev,
-                                        [vId]: Math.max(0, (prev[vId] || 0) - 1),
-                                      }));
-                                    }}
-                                    className="w-7 h-7 rounded-lg border border-slate-200 bg-white flex items-center justify-center font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-                                  >
-                                    -
-                                  </button>
-                                  <span className="text-xs font-black text-[#0C3352] w-5 text-center" style={{ fontFamily: M }}>
-                                    {qty}
+                              {/* CONDITIONAL COUNTER: ONLY SHOW INCREMENT & DECREMENT BUTTONS IF allowMultiple IS TRUE */}
+                              {isMultiple ? (
+                                <div
+                                  className="flex items-center justify-between pt-2.5 border-t border-slate-200/70"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <span className="text-xs sm:text-sm font-semibold text-slate-500 select-none" style={{ fontFamily: M }}>
+                                    {qty > 0 ? `${qty} Selected` : '0 Selected'}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      disabled={qty === 0}
+                                      onClick={() => {
+                                        setVariantQuantities((prev) => ({
+                                          ...prev,
+                                          [vId]: Math.max(0, (prev[vId] || 0) - 1),
+                                        }));
+                                      }}
+                                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white shadow-xs border border-slate-100 flex items-center justify-center font-bold text-slate-700 transition select-none ${
+                                        qty === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer active:scale-95'
+                                      }`}
+                                    >
+                                      -
+                                    </button>
+                                    <span className="text-xs sm:text-base font-extrabold text-[#0C3352] w-6 sm:w-7 text-center select-none" style={{ fontFamily: M }}>
+                                      {qty}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setVariantQuantities((prev) => ({
+                                          ...prev,
+                                          [vId]: (prev[vId] || 0) + 1,
+                                        }));
+                                      }}
+                                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#0084FF] shadow-[0_2px_8px_rgba(0,132,255,0.3)] flex items-center justify-center font-bold text-white hover:bg-[#0070db] active:scale-95 transition cursor-pointer text-base sm:text-lg select-none"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div
+                                  className="flex items-center justify-between pt-2.5 border-t border-slate-200/70"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <span className="text-xs sm:text-sm font-semibold text-slate-500 select-none" style={{ fontFamily: M }}>
+                                    {isSelected ? '1 Selected' : 'Option'}
                                   </span>
                                   <button
                                     type="button"
                                     onClick={() => {
                                       setVariantQuantities((prev) => ({
                                         ...prev,
-                                        [vId]: (prev[vId] || 0) + 1,
+                                        [vId]: (prev[vId] || 0) > 0 ? 0 : 1,
                                       }));
                                     }}
-                                    className="w-7 h-7 rounded-lg bg-[#0084FF] text-white flex items-center justify-center font-bold hover:brightness-110 transition cursor-pointer"
+                                    className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer select-none flex items-center gap-1.5 ${
+                                      isSelected
+                                        ? 'bg-[#0084FF] text-white shadow-xs'
+                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                    }`}
+                                    style={{ fontFamily: M }}
                                   >
-                                    +
+                                    {isSelected ? (
+                                      <>
+                                        <Check size={14} weight="bold" />
+                                        <span>Selected</span>
+                                      </>
+                                    ) : (
+                                      <span>Select</span>
+                                    )}
                                   </button>
                                 </div>
-                              </div>
+                              )}
                             </div>
                           );
                         })}
@@ -1647,11 +1708,15 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                         .map((v) => {
                           const vId = v.id || (v as any)._id;
                           const q = variantQuantities[vId];
+                          const isMultiple = Boolean(v.allowMultiple);
+                          const unitStr = v.unit ? (v.unit.startsWith('/') ? v.unit : `/ ${v.unit}`) : '';
                           return (
-                            <div key={vId} className="flex justify-between items-center text-[#0C3352] font-extrabold pl-1">
-                              <span>• {v.name}</span>
+                            <div key={vId} className="flex justify-between items-center text-[#0C3352] font-extrabold pl-1 text-xs">
+                              <span>
+                                • {v.name} {unitStr ? <span className="text-slate-400 font-medium text-[11px]">({unitStr.trim()})</span> : ''}
+                              </span>
                               <span className="text-[#0084FF] font-black">
-                                x{q} {v.price > 0 ? `(+AED ${v.price * q})` : ''}
+                                {isMultiple ? `x${q} ` : ''}{v.price > 0 ? `(+AED ${(v.price * q).toFixed(0)})` : ''}
                               </span>
                             </div>
                           );
