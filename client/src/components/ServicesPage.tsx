@@ -34,7 +34,7 @@ const getIconComponent = (iconName?: string): React.ElementType => {
 
 interface ServicesPageProps {
   onServiceSelect?: (serviceTitle: string) => void;
-  onBookClick?: () => void;
+  onBookClick?: (serviceId: string, variantId?: string) => void;
 }
 
 export const ServicesPage: React.FC<ServicesPageProps> = ({ onServiceSelect, onBookClick }) => {
@@ -208,8 +208,8 @@ export const ServicesPage: React.FC<ServicesPageProps> = ({ onServiceSelect, onB
                       </button>
 
                       <button
-                        onClick={onBookClick}
-                        className="flex items-center justify-center gap-2 bg-[#0C3352] text-white hover:bg-[#0084FF] py-2.5 text-sm font-bold transition-colors"
+                        onClick={() => onBookClick?.(service.slug || service.id.toString())}
+                        className="flex items-center justify-center gap-2 bg-[#0C3352] text-white hover:bg-[#0084FF] py-2.5 text-sm font-bold transition-colors cursor-pointer"
                         style={{ fontFamily: M, borderRadius: '2px' }}
                       >
                         Book Now

@@ -54,6 +54,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
   const [forgotPasswordMsg, setForgotPasswordMsg] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [policyView, setPolicyView] = useState<'terms' | 'privacy' | null>(null);
 
   React.useEffect(() => {
     setMode(initialMode);
@@ -364,15 +365,58 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="mt-6 text-center">
             <p className="text-[10px] text-slate-400">
               By continuing, you agree to Maidslife&apos;s{' '}
-              <a href="#" onClick={(e) => e.preventDefault()} className="text-primary hover:underline font-semibold">
+              <button
+                type="button"
+                onClick={() => setPolicyView('terms')}
+                className="text-primary hover:underline font-semibold cursor-pointer"
+              >
                 Terms
-              </a>{' '}
+              </button>{' '}
               &amp;{' '}
-              <a href="#" onClick={(e) => e.preventDefault()} className="text-primary hover:underline font-semibold">
+              <button
+                type="button"
+                onClick={() => setPolicyView('privacy')}
+                className="text-primary hover:underline font-semibold cursor-pointer"
+              >
                 Privacy Policy
-              </a>
+              </button>
             </p>
           </div>
+
+          {/* POLICY VIEW PANEL */}
+          {policyView && (
+            <div className="absolute inset-0 bg-white p-6 z-20 flex flex-col justify-between animate-in fade-in duration-150">
+              <div className="overflow-y-auto space-y-3">
+                <h3 className="text-base font-bold text-slate-800">
+                  {policyView === 'terms' ? 'Terms of Service' : 'Privacy Policy'}
+                </h3>
+                <div className="text-xs text-slate-600 space-y-2 leading-relaxed">
+                  {policyView === 'terms' ? (
+                    <>
+                      <p>1. Service Bookings: All cleaning visits are scheduled according to professional availability in Dubai &amp; UAE.</p>
+                      <p>2. Cancellation: Free cancellation or reschedule up to 2 hours prior to scheduled start time.</p>
+                      <p>3. Guarantee: Free re-clean guarantee within 24 hours if you are not completely satisfied.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>1. Privacy First: We collect your name, phone number, and address strictly to fulfill home cleaning appointments.</p>
+                      <p>2. Security: We do not share your private contact information with third-party advertisers.</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setPolicyView(null)}
+                  className="px-5 py-2 rounded-xl bg-primary text-white font-bold text-xs shadow-sm hover:brightness-105 transition-all cursor-pointer"
+                >
+                  Back to {isSignup ? 'Sign Up' : 'Sign In'}
+                </button>
+              </div>
+            </div>
+          )}
 
         </div>
       </div>

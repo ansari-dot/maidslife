@@ -242,8 +242,11 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBookClick }) => {
               <div className="space-y-4 pt-2">
 
                 {/* Phone Card */}
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#F8FAFC] border border-slate-100">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#E8F3FF] text-[#0084FF]">
+                <a
+                  href="tel:0562133996"
+                  className="flex items-start gap-4 p-4 rounded-2xl bg-[#F8FAFC] border border-slate-100 hover:border-[#0084FF] hover:bg-blue-50/40 transition-all group cursor-pointer"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#E8F3FF] text-[#0084FF] group-hover:scale-105 transition-transform">
                     <PhoneCall size={24} weight="regular" />
                   </div>
                   <div>
@@ -254,7 +257,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBookClick }) => {
                       056 213 3996
                     </p>
                   </div>
-                </div>
+                </a>
 
                 {/* WhatsApp Card */}
                 <a
@@ -279,8 +282,11 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBookClick }) => {
                 </a>
 
                 {/* Email Card */}
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#F8FAFC] border border-slate-100">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#E8F3FF] text-[#0084FF]">
+                <a
+                  href="mailto:info@maidslife.com"
+                  className="flex items-start gap-4 p-4 rounded-2xl bg-[#F8FAFC] border border-slate-100 hover:border-[#0084FF] hover:bg-blue-50/40 transition-all group cursor-pointer"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#E8F3FF] text-[#0084FF] group-hover:scale-105 transition-transform">
                     <EnvelopeSimple size={24} weight="regular" />
                   </div>
                   <div>
@@ -291,11 +297,16 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBookClick }) => {
                       info@maidslife.com
                     </p>
                   </div>
-                </div>
+                </a>
 
                 {/* Location Card */}
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#F8FAFC] border border-slate-100">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#E8F3FF] text-[#0084FF]">
+                <a
+                  href="https://maps.google.com/?q=Business+Bay+Dubai+UAE"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-4 p-4 rounded-2xl bg-[#F8FAFC] border border-slate-100 hover:border-[#0084FF] hover:bg-blue-50/40 transition-all group cursor-pointer"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#E8F3FF] text-[#0084FF] group-hover:scale-105 transition-transform">
                     <MapPin size={24} weight="regular" />
                   </div>
                   <div>
@@ -306,7 +317,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBookClick }) => {
                       Level 14, Business Bay Tower, Dubai, UAE
                     </p>
                   </div>
-                </div>
+                </a>
 
               </div>
             </div>

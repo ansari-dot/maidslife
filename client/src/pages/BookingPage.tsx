@@ -345,7 +345,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     ? (proCount - 1) * selectedService.extraProfessionalPrice * hrs
     : (proCount > 1 ? (baseServicePrice + addonsPrice) * (proCount - 1) : 0);
 
-  const materialsPrice = (isFieldEnabled('cleaningMaterials') && needCleaningMaterials) ? 10 * hrs : 0;
+  const materialsPrice = (isFieldEnabled('cleaningMaterials') && needCleaningMaterials) ? 5 * hrs : 0;
 
   const subtotalBeforeFreq = baseServicePrice + extraHoursPriceCalc + addonsPrice + extraProPrice + variantsPrice + materialsPrice + garmentPrice + expressFee;
 
@@ -1214,7 +1214,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           <label className="block text-[#0C3352] text-[16px] font-extrabold m-0 mb-0.5" style={{ fontFamily: M }}>
                             {getFieldLabel('cleaningMaterials', 'Cleaning Materials')}
                           </label>
-                          <p className="text-slate-500 text-xs" style={{ fontFamily: M }}>Do you need us to bring materials? (+AED 10/hr)</p>
+                          <p className="text-slate-500 text-xs" style={{ fontFamily: M }}>Do you need us to bring materials? (+AED 5/hr)</p>
                         </div>
                         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full">
                           <button
@@ -1565,7 +1565,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           className="w-5 h-5 rounded border-slate-300 text-[#0084FF] focus:ring-[#0084FF] cursor-pointer"
                         />
                         <label htmlFor="needCleaningMaterials" className="text-sm font-bold text-[#0C3352] cursor-pointer" style={{ fontFamily: M }}>
-                          I need cleaning materials brought by the team
+                          I need cleaning materials brought by the team (+AED 5/hr)
                         </label>
                       </div>
                     )}
@@ -1800,6 +1800,13 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                     <div className="flex justify-between items-start text-slate-500">
                       <span>Professionals</span>
                       <span className="font-bold text-[#0C3352]">{professionalsCount}</span>
+                    </div>
+                  )}
+
+                  {isFieldEnabled('cleaningMaterials') && needCleaningMaterials && (
+                    <div className="flex justify-between items-center text-slate-500">
+                      <span>Cleaning Materials</span>
+                      <span className="font-bold text-[#0C3352]">Yes {materialsPrice > 0 ? `(+AED ${materialsPrice})` : ''}</span>
                     </div>
                   )}
 

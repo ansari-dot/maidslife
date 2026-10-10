@@ -28,7 +28,7 @@ interface ServiceDetailPageProps {
   serviceId?: string;
   serviceName?: string;
   onBackToHome?: () => void;
-  onBookClick?: (serviceId?: string, addonIds?: string[]) => void;
+  onBookClick?: (serviceId?: string, variantId?: string, addonIds?: string[]) => void;
 }
 
 // BEFORE & AFTER GALLERY SCENES
@@ -180,7 +180,7 @@ export const ServiceDetailPage: React.FC<ServiceDetailPageProps> = ({
 
 
   const handleMainBookNow = () => {
-    if (service) onBookClick?.(service.id, []);
+    if (service) onBookClick?.(service.slug || service.id.toString(), undefined, []);
   };
 
   if (isLoading) {
@@ -281,14 +281,12 @@ export const ServiceDetailPage: React.FC<ServiceDetailPageProps> = ({
 
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <button
-                  onClick={() => {
-                    document.getElementById('variants-section')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="inline-flex items-center gap-2.5 rounded-full bg-grad-primary-cta px-7 py-3.5 text-[#0C3352] font-extrabold text-sm shadow-md hover:brightness-105 transition-all cursor-pointer"
+                  onClick={handleMainBookNow}
+                  className="inline-flex items-center gap-2.5 rounded-full bg-grad-primary-cta px-7 py-3.5 text-[#0C3352] font-extrabold text-sm shadow-md hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
                   style={{ fontFamily: M }}
                 >
-                  <Package size={18} weight="bold" />
-                  View All Packages &amp; Options ↓
+                  <CalendarBlank size={18} weight="bold" />
+                  Book This Service Now →
                 </button>
               </div>
 

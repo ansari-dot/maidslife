@@ -9,6 +9,7 @@ import {
   WhatsappLogo,
   ArrowRight,
   ShieldCheck,
+  X,
 } from '@phosphor-icons/react';
 
 const M = "'Manrope', sans-serif";
@@ -21,6 +22,7 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({ onBookClick, onNavigate }) => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | 'refund' | null>(null);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,32 +120,67 @@ export const Footer: React.FC<FooterProps> = ({ onBookClick, onNavigate }) => {
 
             {/* Contact Details */}
             <div className="mt-6 flex flex-col gap-3">
-              <div className="flex items-center gap-3 text-[#CBD5E1]">
+              <a
+                href="tel:0562133996"
+                className="flex items-center gap-3 text-[#CBD5E1] hover:text-[#0084FF] transition-colors cursor-pointer w-fit"
+              >
                 <Phone size={18} className="text-[#0084FF] shrink-0" />
                 <span style={{ fontFamily: M, fontSize: '13px', fontWeight: 600 }}>056 213 3996</span>
-              </div>
-              <div className="flex items-center gap-3 text-[#CBD5E1]">
+              </a>
+              <a
+                href="mailto:info@maidslife.com"
+                className="flex items-center gap-3 text-[#CBD5E1] hover:text-[#0084FF] transition-colors cursor-pointer w-fit"
+              >
                 <EnvelopeSimple size={18} className="text-[#0084FF] shrink-0" />
                 <span style={{ fontFamily: M, fontSize: '13px' }}>info@maidslife.com</span>
-              </div>
-              <div className="flex items-center gap-3 text-[#CBD5E1]">
+              </a>
+              <a
+                href="https://maps.google.com/?q=Business+Bay+Dubai+UAE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-[#CBD5E1] hover:text-[#0084FF] transition-colors cursor-pointer w-fit"
+              >
                 <MapPin size={18} className="text-[#0084FF] shrink-0" />
                 <span style={{ fontFamily: M, fontSize: '13px' }}>Business Bay, Dubai, UAE</span>
-              </div>
+              </a>
             </div>
 
             {/* Social Icons */}
             <div className="mt-6 flex items-center gap-3">
-              <a href="#" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#CBD5E1] hover:bg-[#0084FF] hover:text-white transition-colors">
+              <a
+                href="https://www.instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#CBD5E1] hover:bg-[#E1306C] hover:text-white transition-colors cursor-pointer"
+              >
                 <InstagramLogo size={18} weight="bold" />
               </a>
-              <a href="#" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#CBD5E1] hover:bg-[#0084FF] hover:text-white transition-colors">
+              <a
+                href="https://www.facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#CBD5E1] hover:bg-[#1877F2] hover:text-white transition-colors cursor-pointer"
+              >
                 <FacebookLogo size={18} weight="bold" />
               </a>
-              <a href="#" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#CBD5E1] hover:bg-[#0084FF] hover:text-white transition-colors">
+              <a
+                href="https://www.linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#CBD5E1] hover:bg-[#0A66C2] hover:text-white transition-colors cursor-pointer"
+              >
                 <LinkedinLogo size={18} weight="bold" />
               </a>
-              <a href="#" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#CBD5E1] hover:bg-[#0084FF] hover:text-white transition-colors">
+              <a
+                href="https://wa.me/971562133996?text=Hello%20Maidslife!"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#CBD5E1] hover:bg-[#25D366] hover:text-white transition-colors cursor-pointer"
+              >
                 <WhatsappLogo size={18} weight="bold" />
               </a>
             </div>
@@ -237,9 +274,15 @@ export const Footer: React.FC<FooterProps> = ({ onBookClick, onNavigate }) => {
                 'Jumeirah Golf Estates',
                 'Arabian Ranches & Mirdif',
               ].map((item, idx) => (
-                <li key={idx} className="flex items-center gap-2 text-[#94A3B8]" style={{ fontFamily: M, fontSize: '13px' }}>
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#0084FF]" />
-                  {item}
+                <li key={idx}>
+                  <button
+                    onClick={() => onBookClick?.()}
+                    className="flex items-center gap-2 text-[#94A3B8] hover:text-white transition-colors text-left cursor-pointer focus:outline-none"
+                    style={{ fontFamily: M, fontSize: '13px' }}
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#0084FF]" />
+                    {item}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -267,18 +310,118 @@ export const Footer: React.FC<FooterProps> = ({ onBookClick, onNavigate }) => {
           </div>
 
           <div className="flex items-center gap-6">
-            <a href="#" className="text-[#94A3B8] hover:text-white transition-colors" style={{ fontFamily: M, fontSize: '12px' }}>
+            <button
+              onClick={() => setLegalModal('privacy')}
+              className="text-[#94A3B8] hover:text-white transition-colors cursor-pointer"
+              style={{ fontFamily: M, fontSize: '12px' }}
+            >
               Privacy Policy
-            </a>
-            <a href="#" className="text-[#94A3B8] hover:text-white transition-colors" style={{ fontFamily: M, fontSize: '12px' }}>
+            </button>
+            <button
+              onClick={() => setLegalModal('terms')}
+              className="text-[#94A3B8] hover:text-white transition-colors cursor-pointer"
+              style={{ fontFamily: M, fontSize: '12px' }}
+            >
               Terms of Service
-            </a>
-            <a href="#" className="text-[#94A3B8] hover:text-white transition-colors" style={{ fontFamily: M, fontSize: '12px' }}>
+            </button>
+            <button
+              onClick={() => setLegalModal('refund')}
+              className="text-[#94A3B8] hover:text-white transition-colors cursor-pointer"
+              style={{ fontFamily: M, fontSize: '12px' }}
+            >
               Refund Policy
-            </a>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* ── LEGAL INFORMATION POPUP MODAL ── */}
+      {legalModal && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setLegalModal(null)}
+        >
+          <div
+            className="relative w-full max-w-xl bg-white text-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl max-h-[85vh] overflow-y-auto animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setLegalModal(null)}
+              className="absolute right-4 top-4 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <X size={20} weight="bold" />
+            </button>
+
+            {legalModal === 'privacy' && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-extrabold text-[#0C3352]" style={{ fontFamily: M }}>
+                  Privacy Policy
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Last updated: 2026. Goodhands Cleaning Services Co. (operating as Maidslife) respects your privacy and is committed to protecting your personal information.
+                </p>
+                <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
+                  <h4 className="font-bold text-slate-800">1. Information We Collect</h4>
+                  <p>We collect details you provide when booking, such as your name, contact phone number, address in Dubai/UAE, and payment preferences.</p>
+                  <h4 className="font-bold text-slate-800">2. How We Use Your Data</h4>
+                  <p>Your details are used exclusively to fulfill cleaning appointments, communicate arrival times, provide customer support, and enhance our services.</p>
+                  <h4 className="font-bold text-slate-800">3. Data Security</h4>
+                  <p>We implement stringent industry-standard technical measures and secure protocols to safeguard your personal information against unauthorized access.</p>
+                </div>
+              </div>
+            )}
+
+            {legalModal === 'terms' && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-extrabold text-[#0C3352]" style={{ fontFamily: M }}>
+                  Terms of Service
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Welcome to Maidslife. By scheduling a service through our platform, you agree to these Terms.
+                </p>
+                <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
+                  <h4 className="font-bold text-slate-800">1. Booking and Confirmation</h4>
+                  <p>All bookings are subject to cleaner availability and confirmation. Rescheduling is available free of charge up to 2 hours before the scheduled time slot.</p>
+                  <h4 className="font-bold text-slate-800">2. Service Quality</h4>
+                  <p>Our specialists are trained and background checked. We provide a 24-Hour Satisfaction Guarantee: if any area does not meet expectations, notify us within 24 hours for a complimentary re-clean.</p>
+                  <h4 className="font-bold text-slate-800">3. Safety &amp; Access</h4>
+                  <p>Clients are required to ensure safe access to the premises during the confirmed booking hours.</p>
+                </div>
+              </div>
+            )}
+
+            {legalModal === 'refund' && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-extrabold text-[#0C3352]" style={{ fontFamily: M }}>
+                  Refund &amp; Cancellation Policy
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  We strive for 100% satisfaction across every cleaning appointment.
+                </p>
+                <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
+                  <h4 className="font-bold text-slate-800">1. Free Cancellation</h4>
+                  <p>You may cancel or reschedule your cleaning appointment without penalty if done at least 2 hours before your scheduled arrival time.</p>
+                  <h4 className="font-bold text-slate-800">2. Free 24h Re-Clean</h4>
+                  <p>If any service is unsatisfactory, contact our team immediately. We will dispatch our team to re-clean the specific areas free of charge.</p>
+                  <h4 className="font-bold text-slate-800">3. Refunds</h4>
+                  <p>If an issue cannot be resolved through our re-clean guarantee, our management team will review and process appropriate refunds or service credits within 3-5 business days.</p>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setLegalModal(null)}
+                className="px-6 py-2.5 rounded-full bg-[#0C3352] text-white font-bold text-xs hover:bg-[#0084FF] transition-colors cursor-pointer"
+                style={{ fontFamily: M }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </footer>
   );

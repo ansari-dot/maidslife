@@ -218,15 +218,25 @@ export function App() {
   // Render main page content based on currentPath
   const renderMainContent = () => {
     if (currentPath === '/payment/success' || currentPath === '/payment-success') {
-      return <PaymentSuccessPage />;
+      return <PaymentSuccessPage onBackToHome={() => navigate('/')} />;
     }
 
     if (currentPath === '/payment/failed' || currentPath === '/payment-failed') {
-      return <PaymentFailedPage />;
+      return (
+        <PaymentFailedPage
+          onBackToHome={() => navigate('/')}
+          onRetryBooking={() => navigate('/booking')}
+        />
+      );
     }
 
     if (currentPath === '/payment/cancel' || currentPath === '/payment-cancel' || currentPath === '/payment/cancelled') {
-      return <PaymentCancelledPage />;
+      return (
+        <PaymentCancelledPage
+          onBackToHome={() => navigate('/')}
+          onRetryBooking={() => navigate('/booking')}
+        />
+      );
     }
 
     if (currentPath === '/booking') {

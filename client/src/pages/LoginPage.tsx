@@ -58,6 +58,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
   const [forgotPasswordMsg, setForgotPasswordMsg] = useState(false);
+  const [policyModal, setPolicyModal] = useState<'terms' | 'privacy' | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -485,16 +486,59 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           <div className="mt-8 pt-4 text-center">
             <p className="text-[11px] text-slate-400 font-medium">
               By signing in, you agree to Maidslife&apos;s{' '}
-              <a href="#" onClick={(e) => e.preventDefault()} className="text-[#0075FF] hover:underline font-bold">
+              <button
+                type="button"
+                onClick={() => setPolicyModal('terms')}
+                className="text-[#0075FF] hover:underline font-bold cursor-pointer"
+              >
                 Terms of Service
-              </a>{' '}
+              </button>{' '}
               and{' '}
-              <a href="#" onClick={(e) => e.preventDefault()} className="text-[#0075FF] hover:underline font-bold">
+              <button
+                type="button"
+                onClick={() => setPolicyModal('privacy')}
+                className="text-[#0075FF] hover:underline font-bold cursor-pointer"
+              >
                 Privacy Policy
-              </a>
+              </button>
               .
             </p>
           </div>
+
+          {/* POLICY VIEW PANEL */}
+          {policyModal && (
+            <div className="absolute inset-0 bg-white p-8 z-30 flex flex-col justify-between animate-in fade-in duration-150">
+              <div className="overflow-y-auto space-y-4">
+                <h3 className="text-xl font-extrabold text-[#0F2A4A]">
+                  {policyModal === 'terms' ? 'Terms of Service' : 'Privacy Policy'}
+                </h3>
+                <div className="text-xs text-slate-600 space-y-3 leading-relaxed">
+                  {policyModal === 'terms' ? (
+                    <>
+                      <p>1. Service Bookings: All cleaning visits are scheduled according to professional availability across Dubai &amp; UAE.</p>
+                      <p>2. Cancellation Policy: Free cancellation or reschedule up to 2 hours prior to scheduled start time.</p>
+                      <p>3. Re-Clean Guarantee: 24-hour satisfaction guarantee with complimentary re-cleaning if needed.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>1. Privacy First: We collect your name, phone number, and address strictly to fulfill home cleaning appointments.</p>
+                      <p>2. Security: We do not share your private contact information with third-party advertisers.</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setPolicyModal(null)}
+                  className="px-6 py-2.5 rounded-xl bg-[#0075FF] text-white font-bold text-xs shadow-sm hover:brightness-105 transition-all cursor-pointer"
+                >
+                  Back to {isSignup ? 'Sign Up' : 'Sign In'}
+                </button>
+              </div>
+            </div>
+          )}
 
         </div>
 

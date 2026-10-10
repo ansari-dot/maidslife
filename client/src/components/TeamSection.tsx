@@ -38,7 +38,7 @@ interface TeamSectionProps {
   onBookClick?: () => void;
 }
 
-export const TeamSection: React.FC<TeamSectionProps> = () => {
+export const TeamSection: React.FC<TeamSectionProps> = ({ onBookClick }) => {
   const [team, setTeam] = useState<any[]>(teamMembers);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -158,6 +158,17 @@ export const TeamSection: React.FC<TeamSectionProps> = () => {
               }`}
             />
           ))}
+        </div>
+
+        {/* ── ACTION CTA BUTTON ── */}
+        <div className="mt-12 flex justify-center">
+          <button
+            onClick={onBookClick}
+            className="inline-flex items-center gap-2.5 rounded-full bg-grad-primary-cta px-8 py-3.5 text-foreground font-extrabold text-sm shadow-[0_4px_16px_rgba(255,184,0,0.3)] hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
+            style={{ fontFamily: M }}
+          >
+            <span>Book with our Trusted Specialists →</span>
+          </button>
         </div>
 
       </div>
