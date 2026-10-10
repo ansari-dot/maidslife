@@ -454,6 +454,13 @@ export const apiService = {
     });
     return data;
   },
+  async updateMarketingBannerSettings(updates: any): Promise<any> {
+    const data = await request<any>('/settings/marketing-banner', {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+    return data;
+  },
 
   // --- TESTIMONIALS ---
   async getTestimonials(): Promise<Testimonial[]> {

@@ -6,6 +6,7 @@ import {
   updateNotificationSettings,
   updateSecuritySettings,
   updateAnnouncementSettings,
+  updateMarketingBannerSettings,
 } from './settings.controller.js';
 import { verifyJWT } from '../../middlewares/auth.middleware.js';
 import { authorizeRoles } from '../../middlewares/rbac.middleware.js';
@@ -20,5 +21,6 @@ router.put('/business', verifyJWT, authorizeRoles('super_admin', 'ops_manager'),
 router.put('/notifications', verifyJWT, authorizeRoles('super_admin'), updateNotificationSettings);
 router.put('/security', verifyJWT, authorizeRoles('super_admin'), updateSecuritySettings);
 router.put('/announcement', verifyJWT, authorizeRoles('super_admin', 'ops_manager'), updateAnnouncementSettings);
+router.put('/marketing-banner', verifyJWT, authorizeRoles('super_admin', 'ops_manager'), updateMarketingBannerSettings);
 
 export default router;

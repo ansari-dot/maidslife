@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { WhatsAppButton } from './components/WhatsAppButton';
-import { WelcomePopup } from './components/WelcomePopup';
+import { MarketingBannerPopup } from './components/MarketingBannerPopup';
 import { AuthModal } from './components/AuthModal';
 import { MyBookingsModal } from './components/MyBookingsModal';
 import { LocationModal, LocationData } from './components/LocationModal';
@@ -356,6 +356,20 @@ export function App() {
           onSuccessLogin={(loggedInUser) => setUser(loggedInUser)}
         />
       )}
+
+      {/* ── MARKETING BANNER POPUP ── */}
+      <MarketingBannerPopup 
+        settings={marketingSettings?.marketingBanner || {
+          isActive: true,
+          title: 'EXCLUSIVE OFFER',
+          offerText: '50% OFF',
+          promoCode: 'WB50',
+          imageUrl: '/marketing-banner.png',
+          link: '/booking',
+          btnText: 'Book Now',
+        }}
+        onNavigate={(path) => navigate(path)}
+      />
 
       {/* ── MY BOOKINGS MODAL ── */}
       <MyBookingsModal

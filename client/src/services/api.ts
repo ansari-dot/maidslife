@@ -396,7 +396,7 @@ export const clientApi = {
   // 9. Fetch Marketing Settings
   async getMarketingSettings(): Promise<any> {
     try {
-      const res = await fetch(`${API_BASE}/marketing`);
+      const res = await fetch(`${API_BASE}/settings`);
       if (res.ok) {
         const json = await res.json();
         return json.data || null;

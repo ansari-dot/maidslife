@@ -41,6 +41,15 @@ const settingsSchema = new mongoose.Schema(
       bgColor: { type: String, default: '#0C3352' },
       textColor: { type: String, default: '#FFFFFF' },
     },
+    marketingBanner: {
+      isActive: { type: Boolean, default: false },
+      title: { type: String, default: 'Enjoy our top-rated services with' },
+      offerText: { type: String, default: '50% off!' },
+      promoCode: { type: String, default: 'WB50' },
+      imageUrl: { type: String, default: '' },
+      btnText: { type: String, default: 'Book now' },
+      link: { type: String, default: '/booking' },
+    },
   },
   {
     timestamps: true,

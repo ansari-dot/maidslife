@@ -31,3 +31,9 @@ export const updateAnnouncementSettings = asyncHandler(async (req, res) => {
   const settings = await SettingsService.updateSettingsSection('announcement', req.body);
   return res.status(200).json(new ApiResponse(200, settings, 'Announcement settings updated'));
 });
+
+export const updateMarketingBannerSettings = asyncHandler(async (req, res) => {
+  const settings = await SettingsService.updateSettingsSection('marketingBanner', req.body);
+  return res.status(200).json(new ApiResponse(200, settings, 'Marketing banner settings updated'));
+});
+

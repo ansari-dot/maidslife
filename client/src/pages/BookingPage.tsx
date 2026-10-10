@@ -306,7 +306,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
           setAddressDetails(parsed.address);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }, []);
 
   // PRICE CALCULATIONS
@@ -335,9 +335,9 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   const proCount = isFieldEnabled('professionals') ? professionalsCount : 1;
 
   const hasVariants = Boolean(selectedService?.variants && selectedService.variants.length > 0);
-  
+
   const baseServicePrice = hasVariants ? 0 : (selectedService?.startingPrice || 0) * qty * hrs;
-  const extraHoursPriceCalc = (isFieldEnabled('extraHours') && selectedService?.extraHourPrice) 
+  const extraHoursPriceCalc = (isFieldEnabled('extraHours') && selectedService?.extraHourPrice)
     ? (extraHoursAmount * selectedService.extraHourPrice * qty)
     : 0;
 
@@ -687,8 +687,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                 }));
                               }}
                               className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${isSelected
-                                  ? 'bg-[#E8F3FF] border-[#0084FF] shadow-xs ring-1 ring-[#0084FF]'
-                                  : 'bg-white border-slate-200 hover:border-slate-300'
+                                ? 'bg-[#E8F3FF] border-[#0084FF] shadow-xs ring-1 ring-[#0084FF]'
+                                : 'bg-white border-slate-200 hover:border-slate-300'
                                 }`}
                             >
                               <div className="flex items-center gap-3 w-full">
@@ -701,7 +701,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                   </span>
                                   {v.price > 0 ? (
                                     <span className="text-[11px] font-bold text-[#0084FF] block mt-0.5" style={{ fontFamily: M }}>
-                                      AED {v.price} / pc
+                                      AED {v.price}
                                     </span>
                                   ) : (
                                     <span className="text-[11px] font-semibold text-slate-400 block mt-0.5" style={{ fontFamily: M }}>
@@ -1198,8 +1198,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                                 type="button"
                                 onClick={() => setFrequency(freq.key as any)}
                                 className={`p-3 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${isSelected
-                                    ? 'border-[#0084FF] bg-[#E8F3FF] ring-2 ring-[#0084FF] text-[#0084FF]'
-                                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                                  ? 'border-[#0084FF] bg-[#E8F3FF] ring-2 ring-[#0084FF] text-[#0084FF]'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                                   }`}
                               >
                                 <span className="text-xs font-extrabold" style={{ fontFamily: M }}>{freq.label}</span>

@@ -45,6 +45,16 @@ export const SettingsView: React.FC = () => {
   const [announcementBgColor, setAnnouncementBgColor] = useState('#0C3352');
   const [announcementTextColor, setAnnouncementTextColor] = useState('#FFFFFF');
 
+  // Marketing Banner State
+  const [marketingBannerIsActive, setMarketingBannerIsActive] = useState(false);
+  const [marketingBannerTitle, setMarketingBannerTitle] = useState('Enjoy our top-rated services with');
+  const [marketingBannerOfferText, setMarketingBannerOfferText] = useState('50% off!');
+  const [marketingBannerPromoCode, setMarketingBannerPromoCode] = useState('WB50');
+  const [marketingBannerImageUrl, setMarketingBannerImageUrl] = useState('');
+  const [marketingBannerLink, setMarketingBannerLink] = useState('/booking');
+  const [marketingBannerBtnText, setMarketingBannerBtnText] = useState('Book now');
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+
   React.useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -56,6 +66,16 @@ export const SettingsView: React.FC = () => {
           setAnnouncementLink(ann.link || '');
           setAnnouncementBgColor(ann.bgColor || '#0C3352');
           setAnnouncementTextColor(ann.textColor || '#FFFFFF');
+        }
+        if ((data as any).marketingBanner) {
+          const mb = (data as any).marketingBanner;
+          setMarketingBannerIsActive(mb.isActive);
+          setMarketingBannerTitle(mb.title || 'Enjoy our top-rated services with');
+          setMarketingBannerOfferText(mb.offerText || '50% off!');
+          setMarketingBannerPromoCode(mb.promoCode || 'WB50');
+          setMarketingBannerImageUrl(mb.imageUrl || '');
+          setMarketingBannerLink(mb.link || '');
+          setMarketingBannerBtnText(mb.btnText || 'Book now');
         }
       } catch (err) {
         console.error('Failed to fetch settings', err);
@@ -82,6 +102,39 @@ export const SettingsView: React.FC = () => {
       notify('Announcement settings updated successfully', 'success');
     } catch (error) {
       notify('Failed to update announcement settings', 'error');
+    }
+  };
+
+  const handleSaveMarketingBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await apiService.updateMarketingBannerSettings({
+        isActive: marketingBannerIsActive,
+        title: marketingBannerTitle,
+        offerText: marketingBannerOfferText,
+        promoCode: marketingBannerPromoCode,
+        imageUrl: marketingBannerImageUrl,
+        link: marketingBannerLink,
+        btnText: marketingBannerBtnText,
+      });
+      notify('Marketing banner settings updated successfully', 'success');
+    } catch (error) {
+      notify('Failed to update marketing banner settings', 'error');
+    }
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setIsUploadingBanner(true);
+      try {
+        const { url } = await apiService.uploadImage(e.target.files[0]);
+        setMarketingBannerImageUrl(url);
+        notify('Banner image uploaded successfully', 'success');
+      } catch (error) {
+        notify('Failed to upload banner image', 'error');
+      } finally {
+        setIsUploadingBanner(false);
+      }
     }
   };
 
@@ -385,6 +438,131 @@ export const SettingsView: React.FC = () => {
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition"
                 >
                   Save Announcement
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 mt-6">
+            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 mb-4">
+              <Globe className="w-4 h-4 text-sky-600" />
+              Marketing Banner (Popup)
+            </h3>
+            
+            <form onSubmit={handleSaveMarketingBanner} className="space-y-4">
+              <div className="flex items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={marketingBannerIsActive}
+                  onChange={(e) => setMarketingBannerIsActive(e.target.checked)}
+                  className="w-4 h-4 text-sky-600 rounded"
+                />
+                <label className="text-xs font-semibold text-slate-700 cursor-pointer" onClick={() => setMarketingBannerIsActive(!marketingBannerIsActive)}>
+                  Enable Marketing Popup on First Visit
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Banner Title (Small Text)
+                  </label>
+                  <input
+                    type="text"
+                    value={marketingBannerTitle}
+                    onChange={(e) => setMarketingBannerTitle(e.target.value)}
+                    placeholder="Enjoy our top-rated services with"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Offer Heading (Large Text)
+                  </label>
+                  <input
+                    type="text"
+                    value={marketingBannerOfferText}
+                    onChange={(e) => setMarketingBannerOfferText(e.target.value)}
+                    placeholder="50% off!"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Promo Code
+                  </label>
+                  <input
+                    type="text"
+                    value={marketingBannerPromoCode}
+                    onChange={(e) => setMarketingBannerPromoCode(e.target.value)}
+                    placeholder="WB50"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Banner Background Image URL or Upload (Optional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={marketingBannerImageUrl}
+                    onChange={(e) => setMarketingBannerImageUrl(e.target.value)}
+                    placeholder="https://example.com/banner.png"
+                    className="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                  <label className={`px-4 py-2 rounded-xl text-xs font-semibold text-white whitespace-nowrap cursor-pointer transition flex items-center justify-center ${isUploadingBanner ? 'bg-slate-400' : 'bg-slate-800 hover:bg-slate-900'}`}>
+                    {isUploadingBanner ? 'Uploading...' : 'Upload'}
+                    <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} disabled={isUploadingBanner} />
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Button Text
+                  </label>
+                  <input
+                    type="text"
+                    value={marketingBannerBtnText}
+                    onChange={(e) => setMarketingBannerBtnText(e.target.value)}
+                    placeholder="Book Now"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Button Link
+                  </label>
+                  <input
+                    type="text"
+                    value={marketingBannerLink}
+                    onChange={(e) => setMarketingBannerLink(e.target.value)}
+                    placeholder="/booking"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+              </div>
+
+              {marketingBannerImageUrl && (
+                <div className="pt-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-2">Image Preview</label>
+                  <img src={marketingBannerImageUrl} alt="Banner Preview" className="max-h-32 rounded-xl object-contain border border-slate-200 bg-slate-50 p-1" />
+                </div>
+              )}
+
+              <div className="pt-3">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition"
+                >
+                  Save Marketing Banner
                 </button>
               </div>
             </form>
