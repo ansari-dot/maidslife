@@ -12,6 +12,7 @@ import { swaggerUi, swaggerSpec } from './config/swagger.js';
 import { notFoundHandler } from './middlewares/notFound.middleware.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { apiLimiter } from './middlewares/rateLimiter.middleware.js';
+import { logger, morganStream } from './utils/logger.js';
 import morgan from 'morgan';
 
 // Import Feature Module Routers
@@ -40,7 +41,12 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy (Nginx) to fetch real IP
-app.use(morgan('dev'));
+// 0. Logging: Morgan dev in development, Winston combined in production
+if (env.NODE_ENV === 'production') {
+  app.use(morgan('combined', { stream: morganStream }));
+} else {
+  app.use(morgan('dev'));
+}
 
 // X-Response-Time latency tracking header
 app.use((req, res, next) => {
@@ -63,23 +69,33 @@ app.use(
   })
 );
 
+// Dynamic CORS: Never allow localhost origins in production
+const isProd = env.NODE_ENV === 'production';
+const allowedOrigins = [
+  env.CLIENT_URL,
+  env.ADMIN_URL,
+  'https://maidslife.com',
+  'https://www.maidslife.com',
+  'https://admin.maidslife.com',
+  ...(!isProd ? ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'] : []),
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      env.CLIENT_URL,
-      env.ADMIN_URL,
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'https://maidslife.com',
-      'https://www.maidslife.com',
-      'https://admin.maidslife.com'
-    ].filter(Boolean),
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, server-to-server, curl)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   })
 );
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Production standard: Safe 1MB body limit to prevent JSON parsing DoS attacks
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 app.use(apiLimiter);
 
@@ -113,13 +129,25 @@ app.get('/health', (req, res) => {
   return res.status(200).json(healthData);
 });
 
-// Sitemap Endpoint
+// Sitemap Endpoint with In-Memory Caching & CDN Cache Headers (TTL: 6 hours)
+let sitemapCache = null;
+let sitemapCacheTime = 0;
+const SITEMAP_TTL = 6 * 60 * 60 * 1000;
+
 app.get('/sitemap.xml', async (req, res) => {
+  res.header('Content-Type', 'application/xml');
+  res.header('Cache-Control', 'public, max-age=21600, s-maxage=21600');
+
+  const now = Date.now();
+  if (sitemapCache && now - sitemapCacheTime < SITEMAP_TTL) {
+    return res.send(sitemapCache);
+  }
+
   try {
-    const services = await Service.find({ isActive: true }, 'slug');
+    const services = await Service.find({ isActive: true }, 'slug').lean();
 
     const sitemap = new SitemapStream({
-      hostname: env.CLIENT_URL || 'https://yourwebsite.com',
+      hostname: env.CLIENT_URL || 'https://maidslife.com',
     });
 
     sitemap.write({ url: '/', changefreq: 'weekly', priority: 1.0 });
@@ -129,21 +157,28 @@ app.get('/sitemap.xml', async (req, res) => {
     sitemap.write({ url: '/careers', changefreq: 'monthly', priority: 0.7 });
 
     for (const service of services) {
-      sitemap.write({
-        url: `/service/${service.slug}`,
-        changefreq: 'weekly',
-        priority: 0.8,
-      });
+      if (service.slug) {
+        sitemap.write({
+          url: `/service/${service.slug}`,
+          changefreq: 'weekly',
+          priority: 0.8,
+        });
+      }
     }
 
     sitemap.end();
     const data = await streamToPromise(sitemap);
+    sitemapCache = data.toString();
+    sitemapCacheTime = now;
 
-    res.header('Content-Type', 'application/xml');
-    res.send(data.toString());
+    return res.send(sitemapCache);
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Unable to generate sitemap');
+    logger.error('Error generating sitemap:', error);
+    if (sitemapCache) {
+      // Graceful fallback: return stale cache instead of 500 to search bots
+      return res.send(sitemapCache);
+    }
+    return res.status(500).send('Unable to generate sitemap');
   }
 });
 

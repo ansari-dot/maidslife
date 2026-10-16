@@ -54,7 +54,8 @@ export const createPayment = asyncHandler(async (req, res) => {
   });
 
   // 6. Send request to Ziina
-  const redirectBase = req.headers.origin || env.CLIENT_URL || 'http://localhost:5173/payment';
+  const clientBase = (req.headers.origin || env.CLIENT_URL || 'http://localhost:3000').replace(/\/+$/, '');
+  const redirectBase = `${clientBase}/payment`;
   
   let ziinaRes;
   try {

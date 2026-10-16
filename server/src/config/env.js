@@ -22,6 +22,7 @@ const envSchema = z.object({
   ZIINA_MODE: z.enum(['test', 'production']).default('test'),
   ZIINA_BASE_URL: z.string().default('https://api-v2.ziina.com/api'),
   ZIINA_API_KEY: z.string().optional(),
+  ZIINA_TEST_API_KEY: z.string().optional(),
   ZIINA_PROD_API_KEY: z.string().optional(),
   ZIINA_WEBHOOK_SECRET: z.string().optional(),
   ADMIN_EMAIL: z.string().optional(),

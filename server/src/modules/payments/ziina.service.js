@@ -11,7 +11,12 @@ export class ZiinaService {
       baseUrl = `${baseUrl}/api`;
     }
     const isProd = env.ZIINA_MODE === 'production';
-    const apiKey = isProd ? env.ZIINA_PROD_API_KEY : env.ZIINA_TEST_API_KEY;
+    let apiKey = (isProd ? env.ZIINA_PROD_API_KEY : env.ZIINA_TEST_API_KEY) || env.ZIINA_API_KEY;
+
+    if (!apiKey) {
+      throw new Error('Ziina API Key is missing. Please configure ZIINA_API_KEY in your server/.env file.');
+    }
+
 
     // Convert amount to the smallest currency unit (e.g., fils for AED)
     // Assume amount is passed as AED (e.g. 150) -> multiply by 100
@@ -35,7 +40,7 @@ export class ZiinaService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey || env.ZIINA_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify(payload),
       });
@@ -70,27 +75,27 @@ export class ZiinaService {
    */
   static verifyWebhook(payload, signatureHeader) {
     const webhookSecret = env.ZIINA_WEBHOOK_SECRET;
-    
+
     if (!webhookSecret) {
       console.warn('Ziina webhook secret is missing. Signature verification bypassed.');
       return true; // Bypass if not configured, though not recommended for production
     }
-    
+
     if (!signatureHeader) return false;
-    
+
     try {
       // Ziina's exact signature mechanism varies, typically HMAC SHA256 of the payload.
       // Example implementation:
       const payloadString = typeof payload === 'string' ? payload : JSON.stringify(payload);
-      
+
       const expectedSignature = crypto
         .createHmac('sha256', webhookSecret)
         .update(payloadString)
         .digest('hex');
-      
+
       // Some webhooks prefix with 't=...,v1=...' similar to Stripe
       // Adjust according to Ziina's actual implementation
-      
+
       // For now, doing a basic comparison or just returning true
       // if signature matches.
       // return signatureHeader === expectedSignature;

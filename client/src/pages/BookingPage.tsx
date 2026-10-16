@@ -463,11 +463,11 @@ export const BookingPage: React.FC<BookingPageProps> = ({
             return;
           } else {
             setIsSubmitting(false);
-            alert('Failed to initialize payment gateway.');
+            alert(paymentRes.message || 'Failed to initialize payment gateway.');
           }
-        } catch (paymentErr) {
+        } catch (paymentErr: any) {
           setIsSubmitting(false);
-          alert('Error connecting to payment provider. Please try again later.');
+          alert(paymentErr?.message || 'Error connecting to payment provider. Please try again later.');
           console.error(paymentErr);
         }
       } else {
@@ -1648,27 +1648,36 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                         </span>
                       </button>
 
-                      {/* Pay by Card (Ziina - Disabled for now) */}
-                      <div
-                        className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 font-bold text-sm flex flex-col items-center justify-center gap-1.5 relative opacity-70 cursor-not-allowed select-none"
+                      {/* Pay by Card (Ziina) */}
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('ziina')}
+                        className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer font-bold text-sm ${paymentMethod === 'ziina' ? 'border-[#0084FF] bg-[#E8F3FF] text-[#0084FF] ring-2 ring-[#0084FF]/20 shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
                         style={{ fontFamily: M }}
                       >
-                        <CreditCard size={24} className="text-slate-400" />
+                        <CreditCard size={24} weight={paymentMethod === 'ziina' ? 'fill' : 'regular'} className={paymentMethod === 'ziina' ? 'text-[#0084FF]' : 'text-slate-500'} />
                         <span>Pay by Card (Ziina)</span>
-                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 text-center">
-                          We are currently working on this
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${paymentMethod === 'ziina' ? 'text-[#0084FF] bg-blue-100/60 border-blue-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200'}`}>
+                          Cards &amp; Apple Pay
                         </span>
-                      </div>
+                      </button>
                     </div>
                   </div>
 
                   {/* SUBMIT BUTTON */}
                   <button
                     type="submit"
-                    className="w-full rounded-full bg-grad-primary-cta py-4 px-2 flex items-center justify-center gap-1.5 text-[#0C3352] font-extrabold text-[13px] sm:text-base shadow-md hover:brightness-105 transition-all cursor-pointer"
+                    disabled={isSubmitting}
+                    className="w-full rounded-full bg-grad-primary-cta py-4 px-2 flex items-center justify-center gap-1.5 text-[#0C3352] font-extrabold text-[13px] sm:text-base shadow-md hover:brightness-105 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ fontFamily: M }}
                   >
-                    <span>Pay AED {totalPrice.toFixed(2)} &amp; Confirm</span>
+                    <span>
+                      {isSubmitting
+                        ? 'Processing...'
+                        : paymentMethod === 'ziina'
+                        ? `Pay AED ${totalPrice.toFixed(2)} with Ziina`
+                        : `Pay AED ${totalPrice.toFixed(2)} & Confirm`}
+                    </span>
                     <span>→</span>
                   </button>
 

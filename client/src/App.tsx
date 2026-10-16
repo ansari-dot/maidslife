@@ -217,11 +217,11 @@ export function App() {
 
   // Render main page content based on currentPath
   const renderMainContent = () => {
-    if (currentPath === '/payment/success' || currentPath === '/payment-success') {
+    if (currentPath === '/payment/success' || currentPath === '/payment-success' || currentPath === '/success') {
       return <PaymentSuccessPage onBackToHome={() => navigate('/')} />;
     }
 
-    if (currentPath === '/payment/failed' || currentPath === '/payment-failed') {
+    if (currentPath === '/payment/failed' || currentPath === '/payment-failed' || currentPath === '/failed') {
       return (
         <PaymentFailedPage
           onBackToHome={() => navigate('/')}
@@ -230,7 +230,7 @@ export function App() {
       );
     }
 
-    if (currentPath === '/payment/cancel' || currentPath === '/payment-cancel' || currentPath === '/payment/cancelled') {
+    if (currentPath === '/payment/cancel' || currentPath === '/payment-cancel' || currentPath === '/payment/cancelled' || currentPath === '/cancel') {
       return (
         <PaymentCancelledPage
           onBackToHome={() => navigate('/')}
