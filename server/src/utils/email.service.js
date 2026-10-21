@@ -1,5 +1,25 @@
 import { sendEmail } from '../config/mailer.js';
 import { env } from '../config/env.js';
+function formatTimeSlot(slot) {
+  if (!slot || typeof slot !== 'string') return null;
+  if (!slot.includes('-')) {
+    const [h, m] = slot.split(':').map(Number);
+    if (isNaN(h)) return slot;
+    const period = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    return `${hour12.toString().padStart(2, '0')}:${(m || 0).toString().padStart(2, '0')} ${period}`;
+  }
+  const parts = slot.split('-').map((s) => s.trim());
+  const formatPart = (t) => {
+    const [h, m] = t.split(':').map(Number);
+    if (isNaN(h)) return t;
+    const period = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    return `${hour12.toString().padStart(2, '0')}:${(m || 0).toString().padStart(2, '0')} ${period}`;
+  };
+  return `${formatPart(parts[0])} - ${formatPart(parts[1])}`;
+}
+
 export class EmailService {
   /**
    * Generates the HTML template for a new booking confirmation.
@@ -14,6 +34,38 @@ export class EmailService {
     const address = booking.address || booking.pickupLocation || 'N/A';
     const variantName = booking.variantName || 'N/A';
 
+    let formattedDate = 'N/A';
+    let formattedTime = 'N/A';
+
+    const rawDate = booking.scheduledAt || booking.date;
+    if (rawDate) {
+      const dateObj = new Date(rawDate);
+      if (!isNaN(dateObj.getTime())) {
+        formattedDate = dateObj.toLocaleDateString('en-US', {
+          timeZone: 'Asia/Dubai',
+          weekday: 'long',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
+        formattedTime = dateObj.toLocaleTimeString('en-US', {
+          timeZone: 'Asia/Dubai',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        });
+      } else if (typeof rawDate === 'string') {
+        formattedDate = rawDate;
+      }
+    }
+
+    if (booking.timeSlot) {
+      const slotFormatted = formatTimeSlot(booking.timeSlot);
+      if (slotFormatted) {
+        formattedTime = slotFormatted;
+      }
+    }
+
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; color: #000;">
         <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 20px; color: #000;">New Booking Details</h1>
@@ -26,6 +78,8 @@ export class EmailService {
         <p style="margin: 8px 0; font-size: 16px;"><strong>Coupon:</strong> ${booking.couponCode || 'None'}</p>
         
         <h3 style="font-size: 18px; font-weight: 800; margin-top: 24px; margin-bottom: 8px; color: #000;">Booking Details:</h3>
+        <p style="margin: 8px 0; font-size: 16px;">Date : ${formattedDate}</p>
+        <p style="margin: 8px 0; font-size: 16px;">Time : ${formattedTime}</p>
         <p style="margin: 8px 0; font-size: 16px;">Frequency : ${booking.frequency || 'One Time'}</p>
         <p style="margin: 8px 0; font-size: 16px;">Service : ${serviceName}</p>
         <p style="margin: 8px 0; font-size: 16px;">Service Details : ${variantName}</p>

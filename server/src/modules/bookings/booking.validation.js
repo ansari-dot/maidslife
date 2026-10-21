@@ -28,6 +28,7 @@ export const createBookingSchema = z.object({
     address: z.string().optional(),
     coordinates: z.object({ lat: z.number(), lng: z.number() }).optional(),
     scheduledAt: z.string().or(z.date()),
+    timeSlot: z.string().optional(),
     amount: z.number().min(0, 'Amount must be non-negative'),
     discount: z.number().optional(),
     couponCode: z.string().optional(),

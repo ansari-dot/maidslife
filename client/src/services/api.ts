@@ -262,8 +262,9 @@ export const clientApi = {
         area: bookingPayload.area || 'Dubai',
         address: bookingPayload.addressDetails || bookingPayload.pickupLocation || 'Dubai',
         scheduledAt: bookingPayload.selectedDate && bookingPayload.selectedTimeSlot
-          ? new Date(`${bookingPayload.selectedDate}T${bookingPayload.selectedTimeSlot.split('-')[0]}:00`).toISOString()
+          ? new Date(`${bookingPayload.selectedDate}T${bookingPayload.selectedTimeSlot.split('-')[0]}:00+04:00`).toISOString()
           : new Date().toISOString(),
+        timeSlot: bookingPayload.selectedTimeSlot,
         amount: bookingPayload.totalPrice,
         discount: bookingPayload.discountAmount || 0,
         couponCode: bookingPayload.couponCode,

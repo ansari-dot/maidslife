@@ -100,6 +100,10 @@ const bookingSchema = new mongoose.Schema(
       required: [true, 'Scheduled date and time is required'],
       index: true,
     },
+    timeSlot: {
+      type: String,
+      default: '',
+    },
     status: {
       type: String,
       enum: ['pending_assignment', 'assigned', 'in_transit', 'in_progress', 'completed', 'cancelled'],
